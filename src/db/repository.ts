@@ -8,6 +8,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { isSupabaseConfigured } from './supabase';
 import {
   Organization,
@@ -39,7 +40,16 @@ export interface DatabaseSchema {
   auditLogs: AuditLog[];
 }
 
-const DATA_DIR = path.resolve(process.cwd(), '.data');
+const isServerless = Boolean(
+  process.env.VERCEL ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.LAMBDA_TASK_ROOT
+);
+
+const DATA_DIR = isServerless
+  ? path.join(os.tmpdir(), '.data')
+  : path.resolve(process.cwd(), '.data');
+
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 
 export class DatabaseRepository {
@@ -70,21 +80,29 @@ export class DatabaseRepository {
       }
     }
 
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-
-    if (fs.existsSync(DB_FILE)) {
-      try {
-        const raw = fs.readFileSync(DB_FILE, 'utf-8');
-        return JSON.parse(raw) as DatabaseSchema;
-      } catch (err) {
-        console.error('Failed to parse database.json, initializing fresh seed.', err);
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
       }
+
+      if (fs.existsSync(DB_FILE)) {
+        try {
+          const raw = fs.readFileSync(DB_FILE, 'utf-8');
+          return JSON.parse(raw) as DatabaseSchema;
+        } catch (err) {
+          console.error('Failed to parse database.json, initializing fresh seed.', err);
+        }
+      }
+    } catch (err) {
+      console.warn('Filesystem read warning (operating in-memory):', err);
     }
 
     const initialSeed = this.createInitialSeed();
-    this.saveToDisk(initialSeed);
+    try {
+      this.saveToDisk(initialSeed);
+    } catch (err) {
+      console.warn('Initial seed save skipped (operating in-memory):', err);
+    }
     return initialSeed;
   }
 
@@ -98,10 +116,14 @@ export class DatabaseRepository {
         );
       }
     }
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    } catch (err) {
+      console.warn('Filesystem write warning (operating in-memory):', err);
     }
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
   }
 
   public resetToSeed(): void {

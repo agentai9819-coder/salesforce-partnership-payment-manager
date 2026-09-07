@@ -3,10 +3,43 @@ import { db } from '@/db/repository';
 import { loginAction } from '@/server/actions/auth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { ShieldCheck, ArrowRight } from 'lucide-react';
+import { ShieldCheck, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Partner } from '@/domain/types/entities';
 
 export default async function LoginPage() {
-  const partners = db.getAllPartners();
+  let partners: Partner[] = [];
+  let configError: string | null = null;
+
+  try {
+    partners = db.getAllPartners();
+  } catch (err: unknown) {
+    configError = err instanceof Error ? err.message : 'Database initialization error';
+    console.error('LoginPage database error:', err);
+    partners = [
+      {
+        id: '11111111-1111-1111-1111-111111111111',
+        organizationId: '00000000-0000-0000-0000-000000000001',
+        authUserId: '11111111-1111-1111-1111-aaaaaaaaaaaa',
+        partnerCode: 'ANURAG',
+        fullName: 'Anurag',
+        email: 'anurag@partnership.internal',
+        profitSharePercentage: 50,
+        isActive: true,
+        createdAt: '2026-08-01T00:00:00Z',
+      },
+      {
+        id: '22222222-2222-2222-2222-222222222222',
+        organizationId: '00000000-0000-0000-0000-000000000001',
+        authUserId: '22222222-2222-2222-2222-bbbbbbbbbbbb',
+        partnerCode: 'VIVEK',
+        fullName: 'Vivek',
+        email: 'vivek@partnership.internal',
+        profitSharePercentage: 50,
+        isActive: true,
+        createdAt: '2026-08-01T00:00:00Z',
+      },
+    ];
+  }
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center p-4">
@@ -21,6 +54,16 @@ export default async function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6 space-y-4 text-xs">
+          {configError && (
+            <div className="flex items-start gap-2 rounded-xl bg-destructive/10 border border-destructive/30 p-3 text-destructive text-xs">
+              <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Database Notice</p>
+                <p className="text-[11px] mt-1">{configError}</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 rounded-xl bg-accent/10 p-3 text-accent text-xs">
             <ShieldCheck className="h-5 w-5 shrink-0" />
             <span>
