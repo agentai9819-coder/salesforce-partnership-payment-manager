@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DatabaseRepository } from '@/db/repository';
 import { SESSION_COOKIE_NAME, VALID_PARTNER_IDS } from '@/server/constants';
 import { loginAction, logoutAction } from '@/server/actions/auth';
+import { getSupabaseSecretKey, getSupabasePublishableKey, isSupabaseConfigured } from '@/db/supabase';
 
 // Mock next/headers cookies
 const mockCookieStore: Record<string, { value: string; options?: Record<string, unknown> }> = {};
@@ -250,12 +251,15 @@ describe('Security, Authorization & Multi-Tenant Boundaries', () => {
     });
   });
 
-  describe('Production Persistence Fail-Safe', () => {
+  describe('Production Persistence Fail-Safe & Supabase Key Model', () => {
     it('MUST fail safely with a clear configuration error if Supabase is missing in production runtime', () => {
       vi.stubEnv('NODE_ENV', 'production');
       vi.stubEnv('NEXT_PHASE', 'phase-production-server');
       vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+      vi.stubEnv('SUPABASE_SECRET_KEY', '');
       vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', '');
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', '');
 
       const period = db.getBillingPeriods()[0];
       const plan = db.getBillingPlans(period.id)[0];
@@ -274,5 +278,46 @@ describe('Security, Authorization & Multi-Tenant Boundaries', () => {
         );
       }).toThrow(/CRITICAL CONFIGURATION ERROR: Supabase PostgreSQL credentials are required in production runtime/);
     });
+
+    it('MUST recognize new format SUPABASE_SECRET_KEY as server-only key and fallback to SUPABASE_SERVICE_ROLE_KEY', () => {
+      // Test modern key format sb_secret_...
+      vi.stubEnv('SUPABASE_SECRET_KEY', 'sb_secret_sample_test_key_12345');
+      vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
+      expect(getSupabaseSecretKey()).toBe('sb_secret_sample_test_key_12345');
+
+      // Test fallback to legacy SUPABASE_SERVICE_ROLE_KEY
+      vi.stubEnv('SUPABASE_SECRET_KEY', '');
+      vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'legacy_service_role_jwt_key');
+      expect(getSupabaseSecretKey()).toBe('legacy_service_role_jwt_key');
+    });
+
+    it('MUST recognize new format NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY and fallback to NEXT_PUBLIC_SUPABASE_ANON_KEY', () => {
+      // Test modern key format sb_publishable_...
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_sample_test_key_67890');
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', '');
+      expect(getSupabasePublishableKey()).toBe('sb_publishable_sample_test_key_67890');
+
+      // Test fallback to legacy anon key
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', '');
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'legacy_anon_jwt_key');
+      expect(getSupabasePublishableKey()).toBe('legacy_anon_jwt_key');
+    });
+
+    it('MUST ensure secret key is server-only and never reads client publishable keys', () => {
+      vi.stubEnv('SUPABASE_SECRET_KEY', '');
+      vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_client_key');
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'legacy_anon_client_key');
+
+      // Server secret key must be strictly empty when only publishable keys are present
+      expect(getSupabaseSecretKey()).toBe('');
+    });
+
+    it('MUST consider Supabase configured when URL and secret key are present', () => {
+      vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://ujnfzjjpybynlsdmwhvs.supabase.co');
+      vi.stubEnv('SUPABASE_SECRET_KEY', 'sb_secret_valid_key');
+      expect(isSupabaseConfigured()).toBe(true);
+    });
   });
 });
+

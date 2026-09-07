@@ -65,7 +65,7 @@ export class DatabaseRepository {
         throw new Error(
           'CRITICAL CONFIGURATION ERROR: Supabase PostgreSQL credentials are required in production runtime. ' +
           'Local JSON file persistence (.data/database.json) is strictly prohibited as a production fallback. ' +
-          'Please configure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
+          'Please configure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY).'
         );
       }
     }
@@ -94,7 +94,7 @@ export class DatabaseRepository {
         throw new Error(
           'CRITICAL CONFIGURATION ERROR: Supabase PostgreSQL credentials are required in production runtime. ' +
           'Local JSON file persistence (.data/database.json) is strictly prohibited as a production fallback. ' +
-          'Please configure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
+          'Please configure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY).'
         );
       }
     }
