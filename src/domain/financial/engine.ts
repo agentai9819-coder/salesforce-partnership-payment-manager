@@ -151,16 +151,14 @@ export function calculatePartnerPositions(input: SettlementEngineInput): Partner
     {
       partnerId: input.anuragPartnerId,
       partnerCode: 'ANURAG',
-      grossCollections: Money.from(
-        input.payments
-          .filter((p) => p.status === 'CONFIRMED' && p.collectedByPartnerId === input.anuragPartnerId)
-          .reduce((sum, p) => sum + Number(p.amountReceived), 0)
-      ).toNumericString(),
-      externalDisbursements: Money.from(
-        input.disbursements
-          .filter((d) => d.status === 'CONFIRMED' && d.disbursedByPartnerId === input.anuragPartnerId)
-          .reduce((sum, d) => sum + Number(d.amountPaid), 0)
-      ).toNumericString(),
+      grossCollections: input.payments
+        .filter((p) => p.status === 'CONFIRMED' && p.collectedByPartnerId === input.anuragPartnerId)
+        .reduce((sum, p) => sum.add(Money.from(p.amountReceived)), Money.zero())
+        .toNumericString(),
+      externalDisbursements: input.disbursements
+        .filter((d) => d.status === 'CONFIRMED' && d.disbursedByPartnerId === input.anuragPartnerId)
+        .reduce((sum, d) => sum.add(Money.from(d.amountPaid)), Money.zero())
+        .toNumericString(),
       netLiquidCashHeld: summary.anuragLiquidCashHeld,
       entitlement: summary.anuragEntitlement,
       netVariance: Money.from(summary.anuragLiquidCashHeld)
@@ -170,16 +168,14 @@ export function calculatePartnerPositions(input: SettlementEngineInput): Partner
     {
       partnerId: input.vivekPartnerId,
       partnerCode: 'VIVEK',
-      grossCollections: Money.from(
-        input.payments
-          .filter((p) => p.status === 'CONFIRMED' && p.collectedByPartnerId === input.vivekPartnerId)
-          .reduce((sum, p) => sum + Number(p.amountReceived), 0)
-      ).toNumericString(),
-      externalDisbursements: Money.from(
-        input.disbursements
-          .filter((d) => d.status === 'CONFIRMED' && d.disbursedByPartnerId === input.vivekPartnerId)
-          .reduce((sum, d) => sum + Number(d.amountPaid), 0)
-      ).toNumericString(),
+      grossCollections: input.payments
+        .filter((p) => p.status === 'CONFIRMED' && p.collectedByPartnerId === input.vivekPartnerId)
+        .reduce((sum, p) => sum.add(Money.from(p.amountReceived)), Money.zero())
+        .toNumericString(),
+      externalDisbursements: input.disbursements
+        .filter((d) => d.status === 'CONFIRMED' && d.disbursedByPartnerId === input.vivekPartnerId)
+        .reduce((sum, d) => sum.add(Money.from(d.amountPaid)), Money.zero())
+        .toNumericString(),
       netLiquidCashHeld: summary.vivekLiquidCashHeld,
       entitlement: summary.vivekEntitlement,
       netVariance: Money.from(summary.vivekLiquidCashHeld)
