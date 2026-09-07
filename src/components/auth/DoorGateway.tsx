@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { Partner } from '@/domain/types/entities';
 import { verifyGatewayPasscodeAction, lockGatewayAction, loginAction } from '@/server/actions/auth';
 import {
@@ -23,7 +22,6 @@ interface DoorGatewayProps {
 }
 
 export function DoorGateway({ partners, isInitiallyUnlocked }: DoorGatewayProps) {
-  const router = useRouter();
   const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,8 +79,7 @@ export function DoorGateway({ partners, isInitiallyUnlocked }: DoorGatewayProps)
     startTransition(async () => {
       const res = await loginAction(code);
       if (res.success) {
-        router.push('/dashboard');
-        router.refresh();
+        window.location.href = '/dashboard';
       } else {
         setError(res.error?.message || 'Login failed');
         setLoggingInCode(null);
