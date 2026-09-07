@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getCurrentPartner } from '@/server/auth';
 import { logoutAction, switchPartnerAction } from '@/server/actions/auth';
 import { LogOut } from 'lucide-react';
@@ -77,7 +78,14 @@ export async function AppHeader() {
                 Settings
               </Link>
 
-              <form action={async () => { 'use server'; await logoutAction(); }} className="inline">
+              <form
+                action={async () => {
+                  'use server';
+                  await logoutAction();
+                  redirect('/login');
+                }}
+                className="inline"
+              >
                 <button
                   type="submit"
                   title="Logout"

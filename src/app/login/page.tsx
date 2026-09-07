@@ -1,5 +1,7 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
 import { db } from '@/db/repository';
+import { getCurrentPartner } from '@/server/auth';
 import { loginAction } from '@/server/actions/auth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -7,6 +9,11 @@ import { ShieldCheck, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Partner } from '@/domain/types/entities';
 
 export default async function LoginPage() {
+  const currentPartner = await getCurrentPartner();
+  if (currentPartner) {
+    redirect('/dashboard');
+  }
+
   let partners: Partner[] = [];
   let configError: string | null = null;
 
@@ -73,7 +80,14 @@ export default async function LoginPage() {
 
           <div className="space-y-3 pt-2">
             {partners.map((p) => (
-              <form key={p.id} action={async () => { 'use server'; await loginAction(p.partnerCode); }}>
+              <form
+                key={p.id}
+                action={async () => {
+                  'use server';
+                  await loginAction(p.partnerCode);
+                  redirect('/dashboard');
+                }}
+              >
                 <Button
                   type="submit"
                   variant="outline"
