@@ -10,3 +10,6 @@ export const VALID_PARTNER_IDS = [
   'partner-anurag-uuid',
   'partner-vivek-uuid',
 ] as const;
+
+export const GATEWAY_COOKIE_NAME = 'sfdc_gateway_unlocked';
+export const DEFAULT_GATEWAY_PASSCODE = 'SFDC@2026';

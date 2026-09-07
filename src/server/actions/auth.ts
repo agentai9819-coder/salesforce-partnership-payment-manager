@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/repository';
 import { SESSION_COOKIE_NAME } from '@/server/auth';
+import { GATEWAY_COOKIE_NAME, DEFAULT_GATEWAY_PASSCODE } from '@/server/constants';
 import { ActionResult } from '@/server/boundaries';
 
 export async function loginAction(partnerCode: 'ANURAG' | 'VIVEK'): Promise<ActionResult> {
@@ -114,3 +115,43 @@ export async function resetDatabaseAction(): Promise<ActionResult> {
     return { success: false, error: { code: 'SERVER_ERROR', message } };
   }
 }
+
+export async function verifyGatewayPasscodeAction(passcode: string): Promise<ActionResult> {
+  const expectedPasscode = process.env.GATEWAY_PASSCODE || DEFAULT_GATEWAY_PASSCODE;
+
+  if (!passcode || passcode.trim() !== expectedPasscode.trim()) {
+    return {
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: 'Incorrect passcode. Security access denied.' },
+    };
+  }
+
+  const maxAge = 60 * 60 * 24 * 30; // 30 days
+  const expires = new Date(Date.now() + maxAge * 1000);
+
+  cookies().set(GATEWAY_COOKIE_NAME, 'unlocked', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge,
+    expires,
+  });
+
+  return { success: true };
+}
+
+export async function lockGatewayAction(): Promise<ActionResult> {
+  cookies().set(GATEWAY_COOKIE_NAME, '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+    expires: new Date(0),
+  });
+  cookies().delete(GATEWAY_COOKIE_NAME);
+  revalidatePath('/login');
+  return { success: true };
+}
+
