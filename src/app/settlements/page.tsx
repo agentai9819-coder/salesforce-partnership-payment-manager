@@ -167,7 +167,7 @@ export default async function SettlementsPage({ searchParams }: SettlementsPageP
                 ₹{Number(summary.totalExternalDisbursed).toLocaleString('en-IN')}
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                Paid by Anurag: ₹{Number(positions[0].externalDisbursements).toLocaleString('en-IN')}
+                Anurag: ₹{Number(positions[0].externalDisbursements).toLocaleString('en-IN')} &bull; Vivek: ₹{Number(positions[1].externalDisbursements).toLocaleString('en-IN')}
               </p>
             </div>
 
@@ -287,21 +287,37 @@ export default async function SettlementsPage({ searchParams }: SettlementsPageP
 
             <div className="grid gap-2 border-t border-accent/20 pt-4 text-xs">
               <div className="flex justify-between text-muted-foreground">
-                <span>Operational Cash Balancing (Vivek cash ₹20k − entitlement ₹17.5k):</span>
+                <span>1. Operational Cash Balancing:</span>
                 <span className="font-bold text-foreground">
-                  Vivek owes Anurag ₹{Number(summary.operationalBalancingTransfer).toLocaleString('en-IN')}
+                  {summary.operationalBalancingDirection === 'VIVEK_OWES_ANURAG' && (
+                    `Vivek owes Anurag ₹${Number(summary.operationalBalancingTransfer).toLocaleString('en-IN')}`
+                  )}
+                  {summary.operationalBalancingDirection === 'ANURAG_OWES_VIVEK' && (
+                    `Anurag owes Vivek ₹${Number(summary.operationalBalancingTransfer).toLocaleString('en-IN')}`
+                  )}
+                  {summary.operationalBalancingDirection === 'BALANCED' && (
+                    'Operationally Balanced (₹0)'
+                  )}
                 </span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Business Carry-Forward Adjustment (Old work balance):</span>
-                <span className="font-bold text-danger">
-                  Anurag owes Vivek ₹{Number(summary.businessAdjustmentsTotal).toLocaleString('en-IN')}
+                <span>2. Net Business Carry-Forward Adjustments:</span>
+                <span className="font-bold text-foreground">
+                  {Number(summary.businessAdjustmentsTotal) > 0 ? (
+                    <span className="text-danger">Anurag owes Vivek ₹{Number(summary.businessAdjustmentsTotal).toLocaleString('en-IN')}</span>
+                  ) : Number(summary.businessAdjustmentsTotal) < 0 ? (
+                    <span className="text-success">Vivek owes Anurag ₹{Math.abs(Number(summary.businessAdjustmentsTotal)).toLocaleString('en-IN')}</span>
+                  ) : (
+                    <span className="text-muted-foreground">No Net Carry-Forward (₹0)</span>
+                  )}
                 </span>
               </div>
               <div className="flex justify-between border-t border-border pt-2 text-sm font-black text-foreground">
                 <span>Final Realized Transfer Amount:</span>
-                <span className="text-success">
-                  ₹{Number(summary.finalSettlementAmount).toLocaleString('en-IN')}
+                <span className={summary.finalSettlementDirection === 'BALANCED' ? 'text-muted-foreground font-bold' : 'text-success font-black'}>
+                  {summary.finalSettlementDirection === 'VIVEK_PAYS_ANURAG' && `Vivek pays Anurag ₹${Number(summary.finalSettlementAmount).toLocaleString('en-IN')}`}
+                  {summary.finalSettlementDirection === 'ANURAG_PAYS_VIVEK' && `Anurag pays Vivek ₹${Number(summary.finalSettlementAmount).toLocaleString('en-IN')}`}
+                  {summary.finalSettlementDirection === 'BALANCED' && 'Balanced (₹0)'}
                 </span>
               </div>
             </div>

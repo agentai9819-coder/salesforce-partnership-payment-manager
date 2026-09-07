@@ -7,8 +7,8 @@ import { ActionResult } from '@/server/boundaries';
 import { z } from 'zod';
 
 const ClientSchema = z.object({
-  name: z.string().min(2, 'Client name must be at least 2 characters'),
-  defaultNote: z.string().optional(),
+  name: z.string().trim().min(2, 'Client name must be at least 2 characters'),
+  defaultNote: z.string().trim().optional(),
 });
 
 export async function createClientAction(formData: FormData): Promise<ActionResult> {
@@ -27,6 +27,21 @@ export async function createClientAction(formData: FormData): Promise<ActionResu
           code: 'VALIDATION_ERROR',
           message: parsed.error.issues[0]?.message || 'Invalid input data',
           fieldErrors: parsed.error.flatten().fieldErrors,
+        },
+      };
+    }
+
+    // Check for duplicate active client name in organization
+    const existingClients = db.getClients(organizationId);
+    const isDuplicate = existingClients.some(
+      (c) => c.status === 'ACTIVE' && c.name.toLowerCase() === parsed.data.name.toLowerCase()
+    );
+    if (isDuplicate) {
+      return {
+        success: false,
+        error: {
+          code: 'CONFLICT',
+          message: `An active client named "${parsed.data.name}" already exists.`,
         },
       };
     }

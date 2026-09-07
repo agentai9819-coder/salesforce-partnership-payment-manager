@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DatabaseRepository } from '@/db/repository';
-import { SESSION_COOKIE_NAME, VALID_PARTNER_IDS } from '@/server/constants';
+import { SESSION_COOKIE_NAME, VALID_PARTNER_IDS, GATEWAY_COOKIE_NAME } from '@/server/constants';
 import { loginAction, logoutAction } from '@/server/actions/auth';
 import { getSupabaseSecretKey, getSupabasePublishableKey, isSupabaseConfigured } from '@/db/supabase';
 
@@ -218,6 +218,7 @@ describe('Security, Authorization & Multi-Tenant Boundaries', () => {
 
     it('MUST enable Secure flag when in production environment', async () => {
       vi.stubEnv('NODE_ENV', 'production');
+      mockCookieStore[GATEWAY_COOKIE_NAME] = { value: 'unlocked' };
 
       const result = await loginAction('VIVEK');
       expect(result.success).toBe(true);

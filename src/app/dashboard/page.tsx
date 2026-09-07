@@ -247,8 +247,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">2. Business Carry-Forward Adjustments:</span>
-                    <span className="font-bold text-danger">
-                      Anurag owes Vivek ₹{Number(summary.businessAdjustmentsTotal).toLocaleString('en-IN')}
+                    <span className="font-bold text-foreground">
+                      {Number(summary.businessAdjustmentsTotal) > 0 ? (
+                        <span className="text-danger">Anurag owes Vivek ₹{Number(summary.businessAdjustmentsTotal).toLocaleString('en-IN')}</span>
+                      ) : Number(summary.businessAdjustmentsTotal) < 0 ? (
+                        <span className="text-success">Vivek owes Anurag ₹{Math.abs(Number(summary.businessAdjustmentsTotal)).toLocaleString('en-IN')}</span>
+                      ) : (
+                        <span className="text-muted-foreground">No Net Carry-Forward (₹0)</span>
+                      )}
                     </span>
                   </div>
 

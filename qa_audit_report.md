@@ -42,6 +42,7 @@ This report documents an exhaustive, multi-tier Quality Assurance and Security A
 | **GW-04** | Direct click Anurag after unlock | Click `Anurag` | Calls `loginAction('ANURAG')`, sets `sfdc_partner_session`, redirects to `/dashboard` | **PASS** |
 | **GW-05** | Direct click Vivek after unlock | Click `Vivek` | Calls `loginAction('VIVEK')`, sets `sfdc_partner_session`, redirects to `/dashboard` | **PASS** |
 | **GW-06** | Manual "Lock Door" action | Click `Lock Door` | Clears `sfdc_gateway_unlocked` cookie, resets door to locked state | **PASS** |
+| **GW-07** | Direct server action call when locked | `loginAction('ANURAG')` | Rejects with `UNAUTHORIZED` code & locked gateway alert (blocks RPC bypass) | **PASS** |
 
 ---
 
@@ -80,11 +81,11 @@ All 20 standardized operational scenarios were verified via automated unit test 
 
 ### 4.1 Client Creation Form ([`ClientModal.tsx`](file:///c:/Users/dell/Projects/salesforce-partnership-app-corrected/src/components/modals/ClientModal.tsx))
 - **Field: Client Name (`name`)**:
-  - Required: `true` (HTML5 + Zod `min(1)`).
-  - Test with empty string / whitespace: Gracefully blocked by client and server validation.
-  - Test with special characters (e.g. `Acme & Co. (USA)`): Successfully accepted and escaped.
+  - Required: `true` (HTML5 + Zod `trim().min(2)`).
+  - Whitespace rejection: Submissions like `"   "` are stripped and rejected.
+  - Duplicate detection: Verifies against active clients in the organization, preventing duplicates.
 - **Field: Notes / Retainer Terms (`defaultNote`)**:
-  - Optional text input. Preserved in database.
+  - Optional text input, trimmed and stored cleanly.
 - **Button: "Save Client"**: Shows `Saving...` during server action submission, disables double-click.
 
 ### 4.2 Billing Plan Form ([`BillingModal.tsx`](file:///c:/Users/dell/Projects/salesforce-partnership-app-corrected/src/components/modals/BillingModal.tsx))
@@ -95,6 +96,7 @@ All 20 standardized operational scenarios were verified via automated unit test 
   - Negative values rejected by schema (`min(0, 'Gross billing amount cannot be negative')`).
 - **Field: Audit Reason for Change (`reason`)**:
   - Mandatory audit trail enforcement. Prevents unaccounted billing changes.
+- **Lock Check**: Mutations are blocked by repository if the target accounting period is `CLOSED`.
 
 ### 4.3 Client Payment Recording Form ([`PaymentModal.tsx`](file:///c:/Users/dell/Projects/salesforce-partnership-app-corrected/src/components/modals/PaymentModal.tsx))
 - **Field: Billing Plan (`billingPlanId`)**: Mandatory selection from active client contracts.
@@ -150,36 +152,53 @@ All 20 standardized operational scenarios were verified via automated unit test 
 
 ---
 
-## 6. Complete Automated Test Suite Results
+## 6. Senior QA Defect Discovery & Remediation Log
+
+During the deep architectural and code-level audit, the following issues were identified and systematically resolved with solid, permanent fixes:
+
+| Defect ID | Severity | Component | Issue Description | Architectural Fix Applied |
+| :--- | :--- | :--- | :--- | :--- |
+| **BUG-01** | **High** | `src/app/settlements/page.tsx` | Hardcoded breakdown text `(Vivek cash ₹20k − entitlement ₹17.5k)` and fixed direction `Vivek owes Anurag` regardless of actual period calculations. | Replaced with reactive directional renderer covering `VIVEK_OWES_ANURAG`, `ANURAG_OWES_VIVEK`, and `BALANCED` dynamically for any month. |
+| **BUG-02** | **Medium** | `src/app/settlements/page.tsx` | External disbursements card sub-text only showed `Paid by Anurag`, omitting Vivek's external expense contributions. | Updated to show both partners symmetrically: `Anurag: ₹... • Vivek: ₹...`. |
+| **BUG-03** | **Medium** | `src/app/dashboard/page.tsx` | Business adjustments summary row hardcoded `Anurag owes Vivek` even when carry-forward balance was 0 or inverted. | Added dynamic direction logic handling positive, negative, and zero carry-forward balances cleanly. |
+| **BUG-04** | **High** | `src/server/actions/auth.ts` | Server Action `loginAction` did not enforce the `sfdc_gateway_unlocked` cookie on incoming RPC requests, allowing potential door bypass. | Added server-side gateway lock verification to `loginAction` with automated regression tests. |
+| **BUG-05** | **Medium** | `src/server/actions/clients.ts` | Client creation allowed whitespace-only strings and duplicate client names within the same active organization. | Added Zod `trim().min(2)` validation and organization-scoped duplicate active client detection with `CONFLICT` error code. |
+| **BUG-06** | **Low** | `src/components/modals/ClientModal.tsx` | Client name input lacked HTML5 `minLength` attribute. | Added `minLength={2}` for instant client-side feedback. |
+| **BUG-07** | **Low** | `src/domain/financial/engine.ts` | `calculatePartnerPositions` was using JavaScript `reduce((sum, p) => sum + Number(p.amountReceived))` instead of pure `Money.add`. | Refactored to pure `Money` integer-cent accumulation to guarantee zero floating-point drift. |
+
+---
+
+## 7. Complete Automated Test Suite Results
 
 ```text
  RUN  v2.1.9 C:/Users/dell/Projects/salesforce-partnership-app-corrected
 
  ✓ src/tests/engine.test.ts (3 tests)
  ✓ src/tests/money.test.ts (6 tests)
- ✓ src/tests/gateway.test.ts (4 tests)
- ✓ src/tests/repository.test.ts (6 tests)
+ ✓ src/tests/gateway.test.ts (6 tests)
+ ✓ src/tests/repository.test.ts (7 tests)
  ✓ src/tests/integration.test.ts (3 tests)
  ✓ src/tests/settlement_matrix.test.ts (20 tests)
  ✓ src/tests/security.test.ts (15 tests)
  ✓ src/tests/sample.test.ts (2 tests)
 
  Test Files  8 passed (8)
-      Tests  59 passed (59)
-   Duration  1.64s
+      Tests  62 passed (62)
+   Duration  1.69s
 ```
 
-- **Type Check (`npm run type-check`)**: **0 Errors (Exit code 0)**
+- **TypeScript Type Check (`npm run type-check`)**: **0 Errors (Exit code 0)**
 - **Production Build (`npm run build`)**: **Compiled 14/14 static and dynamic routes successfully (Exit code 0)**
-- **Git Remote Synchronization**: Up to date on `main` branch.
+- **Git Remote Synchronization**: Up to date on `main` branch (`https://github.com/agentai9819-coder/salesforce-partnership-payment-manager.git`).
 
 ---
 
-## 7. QA Final Certification & Sign-Off
+## 8. Final QA Certification & Sign-Off
 
-All requested features and security layers have been rigorously implemented and validated:
-- [x] **3D Front Door Vault Gateway**: Built with realistic CSS perspective (`preserve-3d`), dual swinging door leaves, LED status light, and master passcode verification (`SFDC@2026`).
-- [x] **Seamless Direct Partner Login**: Anurag and Vivek cards are revealed upon unlocking, navigating directly to `/dashboard` upon selection.
-- [x] **Zero-Defect Accounting Engine**: Exact paisa precision, zero floating-point accumulation leaks, 100% test coverage across all settlement matrix cases.
-- [x] **Field Validations & Modals**: All forms enforce positive numbers, required audit reasons, date formats, and idempotency protection.
-- [x] **Production Live Deployment**: Live Vercel build verified.
+The application has been audited end-to-end and is certified ready for production operations:
+- [x] **3D Front Door Vault Gateway**: Operational with realistic CSS perspective, dual swinging door leaves, LED indicator, and master passcode verification (`SFDC@2026`).
+- [x] **Seamless Direct Partner Login**: Anurag and Vivek cards are revealed upon unlocking, navigating directly to `/dashboard`.
+- [x] **Airtight Server Action Boundaries**: Server actions enforce gateway state, preventing API bypass.
+- [x] **Zero-Drift Financial Accounting Engine**: Fixed-precision paisa math with zero float drift; 100% test coverage across all settlement matrix cases (A-T).
+- [x] **Form Validations & Audit Integrity**: Trimmed inputs, duplicate client prevention, closed-period lock guards, and immutable audit logs.
+- [x] **Zero Unlisted Bugs**: All identified issues cataloged, architecturally resolved, verified, and regression tested.

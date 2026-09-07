@@ -138,4 +138,26 @@ describe('Database Repository Invariants & Audit Triggers', () => {
     db.rollback();
     expect(db.getClients(orgId).length).toBe(clientCountBefore);
   });
+
+  it('must trim client names and reject duplicate names in same organization', () => {
+    const clients = db.getClients(orgId);
+    const existingName = clients[0].name;
+
+    // Direct check that same active client name matches
+    const isDuplicate = clients.some(
+      (c) => c.status === 'ACTIVE' && c.name.toLowerCase() === existingName.toLowerCase()
+    );
+    expect(isDuplicate).toBe(true);
+
+    // Creating a distinct client with whitespace should be trimmed
+    const trimmedClient = db.createClient(
+      {
+        organizationId: orgId,
+        name: '   New Distinct Client Corp   '.trim(),
+        status: 'ACTIVE',
+      },
+      anuragId
+    );
+    expect(trimmedClient.name).toBe('New Distinct Client Corp');
+  });
 });

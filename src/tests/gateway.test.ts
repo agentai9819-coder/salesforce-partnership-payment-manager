@@ -18,7 +18,7 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
 
-import { verifyGatewayPasscodeAction, lockGatewayAction } from '@/server/actions/auth';
+import { verifyGatewayPasscodeAction, lockGatewayAction, loginAction } from '@/server/actions/auth';
 import { DEFAULT_GATEWAY_PASSCODE, GATEWAY_COOKIE_NAME } from '@/server/constants';
 
 describe('Front Door Security Gateway Action Tests', () => {
@@ -55,5 +55,28 @@ describe('Front Door Security Gateway Action Tests', () => {
     const res = await lockGatewayAction();
     expect(res.success).toBe(true);
     expect(mockCookieStore[GATEWAY_COOKIE_NAME]).toBeUndefined();
+  });
+
+  it('rejects partner login if gateway is locked in production mode', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    delete mockCookieStore[GATEWAY_COOKIE_NAME];
+
+    const res = await loginAction('ANURAG');
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe('UNAUTHORIZED');
+    expect(res.error?.message).toContain('Security Gateway is locked');
+
+    vi.unstubAllEnvs();
+  });
+
+  it('allows partner login if gateway is unlocked in production mode', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mockCookieStore[GATEWAY_COOKIE_NAME] = { value: 'unlocked' };
+
+    const res = await loginAction('ANURAG');
+    expect(res.success).toBe(true);
+    expect(res.data).toBeDefined();
+
+    vi.unstubAllEnvs();
   });
 });

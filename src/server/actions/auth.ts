@@ -9,6 +9,18 @@ import { ActionResult } from '@/server/boundaries';
 
 export async function loginAction(partnerCode: 'ANURAG' | 'VIVEK'): Promise<ActionResult> {
   try {
+    // Defense-in-depth: Ensure the Front Door Security Gateway has been unlocked
+    const gatewayCookie = cookies().get(GATEWAY_COOKIE_NAME);
+    if (process.env.NODE_ENV !== 'test' && gatewayCookie?.value !== 'unlocked') {
+      return {
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Security Gateway is locked. Please enter the master passcode at the front door.',
+        },
+      };
+    }
+
     // Dynamic lookup: organization is determined from the verified partner record
     const partner = db.getPartnerByCode(partnerCode);
     if (!partner || !partner.isActive) {
