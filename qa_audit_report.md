@@ -165,6 +165,7 @@ During the deep architectural and code-level audit, the following issues were id
 | **BUG-05** | **Medium** | `src/server/actions/clients.ts` | Client creation allowed whitespace-only strings and duplicate client names within the same active organization. | Added Zod `trim().min(2)` validation and organization-scoped duplicate active client detection with `CONFLICT` error code. |
 | **BUG-06** | **Low** | `src/components/modals/ClientModal.tsx` | Client name input lacked HTML5 `minLength` attribute. | Added `minLength={2}` for instant client-side feedback. |
 | **BUG-07** | **Low** | `src/domain/financial/engine.ts` | `calculatePartnerPositions` was using JavaScript `reduce((sum, p) => sum + Number(p.amountReceived))` instead of pure `Money.add`. | Refactored to pure `Money` integer-cent accumulation to guarantee zero floating-point drift. |
+| **BUG-08** | **High** | `src/app/layout.tsx`, `AppHeader`, `AppNavigation` | Navigation tabs (`AppNavigation`), top header, and footer were visible on the login screen, breaking vault security isolation. | Re-architected `RootLayout` to completely omit `AppHeader`, `AppNavigation`, and `footer` for unauthenticated views, giving the 3D Vault Door a 100% full-screen immersive viewport (`min-h-screen w-full bg-slate-950`). |
 
 ---
 
