@@ -876,20 +876,6 @@ export class DatabaseRepository {
           createdAt: '2026-09-01T12:00:00Z',
           updatedAt: '2026-09-01T12:00:00Z',
         },
-        {
-          id: 'pay-sep-sai',
-          billingPlanId: 'cbp-sai-sep',
-          collectedByPartnerId: vivekId,
-          paymentDate: '2026-09-01',
-          amountReceived: '20000.00',
-          paymentReference: 'LAST-15-DAYS-SAI',
-          status: 'CONFIRMED',
-          notes: 'Last 15 days payment collected by Vivek',
-          idempotencyKey: 'idem-sai-sep-01',
-          createdByPartnerId: vivekId,
-          createdAt: '2026-09-01T12:00:00Z',
-          updatedAt: '2026-09-01T12:00:00Z',
-        },
       ],
       externalParties: [
         {

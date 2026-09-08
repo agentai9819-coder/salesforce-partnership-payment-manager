@@ -28,19 +28,19 @@ describe('Multi-User End-to-End Business Workflows & September Baseline Verifica
       adjustments,
     });
 
-    // Verification of non-hardcoded September figures derived from database
-    expect(summary.totalCollected).toBe('45000.00');
+    // Verification of true September figures: Sai has not paid, only Eshwar paid ₹25k to Anurag
+    expect(summary.totalCollected).toBe('25000.00');
     expect(summary.totalExternalDisbursed).toBe('10000.00');
-    expect(summary.netPartnershipIncome).toBe('35000.00');
-    expect(summary.anuragEntitlement).toBe('17500.00');
-    expect(summary.vivekEntitlement).toBe('17500.00');
-    expect(summary.anuragLiquidCashHeld).toBe('15000.00'); // 25,000 collected - 10,000 paid to resource
-    expect(summary.vivekLiquidCashHeld).toBe('20000.00');  // 20,000 collected - 0
-    expect(summary.operationalBalancingTransfer).toBe('2500.00');
-    expect(summary.operationalBalancingDirection).toBe('VIVEK_OWES_ANURAG');
+    expect(summary.netPartnershipIncome).toBe('15000.00');
+    expect(summary.anuragEntitlement).toBe('7500.00');
+    expect(summary.vivekEntitlement).toBe('7500.00');
+    expect(summary.anuragLiquidCashHeld).toBe('15000.00'); // ₹25,000 collected - ₹10,000 paid to dev
+    expect(summary.vivekLiquidCashHeld).toBe('0.00');      // ₹0 collected by Vivek (Sai has not paid)
+    expect(summary.operationalBalancingTransfer).toBe('7500.00');
+    expect(summary.operationalBalancingDirection).toBe('ANURAG_OWES_VIVEK');
     expect(summary.businessAdjustmentsTotal).toBe('500.00');
-    expect(summary.finalSettlementAmount).toBe('2000.00');
-    expect(summary.finalSettlementDirection).toBe('VIVEK_PAYS_ANURAG');
+    expect(summary.finalSettlementAmount).toBe('8000.00');
+    expect(summary.finalSettlementDirection).toBe('ANURAG_PAYS_VIVEK');
   });
 
   it('should support full collaborative lifecycle across Anurag and Vivek with shared state', () => {
@@ -152,8 +152,8 @@ describe('Multi-User End-to-End Business Workflows & September Baseline Verifica
       adjustments: db.getBusinessAdjustments(period.id),
     });
 
-    // Only Sai ₹20,000 remains active
-    expect(updatedSummary.totalCollected).toBe('20000.00');
+    // Since Sai has not paid and Eshwar is voided, 0 active collections remain
+    expect(updatedSummary.totalCollected).toBe('0.00');
     expect(updatedSummary.anuragLiquidCashHeld).toBe('-10000.00'); // 0 collected - 10,000 disbursed
   });
 });
