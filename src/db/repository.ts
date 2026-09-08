@@ -948,21 +948,7 @@ export class DatabaseRepository {
           updatedAt: '2026-09-01T12:30:00Z',
         },
       ],
-      businessAdjustments: [
-        {
-          id: 'ba-old-work-500',
-          organizationId: orgId,
-          effectiveBillingPeriodId: periodSepId,
-          fromPartnerId: anuragId,
-          toPartnerId: vivekId,
-          amount: '500.00',
-          reason: 'Balance remaining from older work payment between partners',
-          status: 'APPLIED',
-          createdByPartnerId: anuragId,
-          createdAt: '2026-09-01T00:00:00Z',
-          updatedAt: '2026-09-01T00:00:00Z',
-        },
-      ],
+      businessAdjustments: [],
       settlementPeriods: [],
       auditLogs: [
         {

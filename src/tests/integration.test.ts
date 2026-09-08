@@ -38,8 +38,8 @@ describe('Multi-User End-to-End Business Workflows & September Baseline Verifica
     expect(summary.vivekLiquidCashHeld).toBe('0.00');      // ₹0 collected by Vivek (Sai has not paid)
     expect(summary.operationalBalancingTransfer).toBe('7500.00');
     expect(summary.operationalBalancingDirection).toBe('ANURAG_OWES_VIVEK');
-    expect(summary.businessAdjustmentsTotal).toBe('500.00');
-    expect(summary.finalSettlementAmount).toBe('8000.00');
+    expect(summary.businessAdjustmentsTotal).toBe('0.00');
+    expect(summary.finalSettlementAmount).toBe('7500.00');
     expect(summary.finalSettlementDirection).toBe('ANURAG_PAYS_VIVEK');
   });
 

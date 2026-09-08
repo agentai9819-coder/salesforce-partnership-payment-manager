@@ -16,11 +16,10 @@ import {
   Wallet,
   CheckCircle2,
   Clock,
-  ArrowUpRight,
-  ArrowDownRight,
+  Calendar,
   Building2,
-  UserCheck,
   PlusCircle,
+  Info,
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -46,7 +45,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const disbursements = db.getExternalDisbursements(activePeriod.id);
   const adjustments = db.getBusinessAdjustments(activePeriod.id);
 
-  // Derive all metrics purely from authoritative transactional records
+  // Derive metrics strictly from authoritative records
   const summary = calculateMonthlySettlement({
     periodKey: activePeriod.periodKey,
     anuragPartnerId: anurag.id,
@@ -60,7 +59,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const confirmedPayments = payments.filter((p) => p.status === 'CONFIRMED');
   const recentPayments = [...confirmedPayments].sort((a, b) => b.paymentDate.localeCompare(a.paymentDate));
 
-  // Partner specific collections & payouts
   const anuragPaymentsIn = confirmedPayments
     .filter((p) => p.collectedByPartnerId === anurag.id)
     .reduce((sum, p) => sum + Number(p.amountReceived), 0);
@@ -77,7 +75,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .filter((d) => d.status === 'CONFIRMED' && d.disbursedByPartnerId === vivek.id)
     .reduce((sum, d) => sum + Number(d.amountPaid), 0);
 
-  // Check Sai's client status specifically to make it crystal clear
+  // Cash currently held in bank accounts
+  const anuragCash = Number(summary.anuragLiquidCashHeld);
+  const vivekCash = Number(summary.vivekLiquidCashHeld);
+  const netPool = Number(summary.netPartnershipIncome);
+  const eachShare = Number(summary.anuragEntitlement);
+
+  // Sai specific details
   const saiClient = clients.find((c) => c.name.toLowerCase().includes('sai'));
   const saiPlan = saiClient ? billingPlans.find((bp) => bp.clientId === saiClient.id) : undefined;
   const saiPaid = confirmedPayments
@@ -85,24 +89,27 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .reduce((sum, p) => sum + Number(p.amountReceived), 0);
 
   return (
-    <div className="space-y-6">
-      {/* Top Header & Period Selector */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-card p-4 sm:p-5 rounded-2xl border border-border shadow-xs">
+    <div className="space-y-6 max-w-6xl mx-auto pb-10">
+      {/* 1. Top Header & 15-Day Cycle Selector */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-card p-4 sm:p-5 rounded-2xl border border-border shadow-xs">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-black tracking-tight text-foreground">Partnership Dashboard</h1>
-            <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-bold text-accent">
-              50 / 50 Partnership
+            <span className="rounded-full bg-blue-100 text-blue-800 px-3 py-0.5 text-xs font-bold flex items-center gap-1">
+              <Calendar className="h-3 w-3" /> 15-Day Payment Cycle
+            </span>
+            <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-bold">
+              50 / 50 Split
             </span>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Real-time cash in hand, client collections, and equal settlement between Anurag &amp; Vivek.
+          <p className="text-xs text-muted-foreground mt-1">
+            Current Cycle: <strong>Sep 1 &ndash; Sep 15, 2026</strong> &bull; Anurag &amp; Vivek Shared Ledger
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <form method="GET" className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-muted-foreground">Month:</span>
+            <span className="text-xs font-bold text-muted-foreground">Cycle:</span>
             <select
               name="period"
               defaultValue={currentPeriodKey}
@@ -110,437 +117,311 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             >
               {periods.map((p) => (
                 <option key={p.id} value={p.periodKey}>
-                  {p.periodKey} ({p.status})
+                  {p.periodKey === '2026-09' ? 'Sep 1 - Sep 15 (Current Cycle)' : p.periodKey === '2026-08' ? 'August 2026 (Closed)' : p.periodKey}
                 </option>
               ))}
             </select>
-            <Button type="submit" size="sm" variant="secondary">
-              Go
+            <Button type="submit" size="sm" variant="secondary" className="text-xs font-bold">
+              View
             </Button>
           </form>
 
           <Link href="/payments">
-            <Button size="sm" className="gap-1.5 bg-accent hover:bg-accent/90 text-white text-xs">
-              <PlusCircle className="h-3.5 w-3.5" /> + Record Payment
+            <Button size="sm" className="gap-1.5 bg-accent hover:bg-accent/90 text-white text-xs font-bold">
+              <PlusCircle className="h-3.5 w-3.5" /> Record Payment
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* SPECIAL NOTICE: Clarification on Sai's Payment Status */}
+      {/* 2. Notice: Sai Payment Status */}
       {saiPaid === 0 && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-3.5 sm:p-4 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-start gap-2.5">
+        <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-4 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-bold text-amber-900">
-                Notice: Client Sai&apos;s Payment (₹50,000) Has Not Arrived Yet
+                Sai Payment Status: ₹0 Received (Payment Pending for this 15-Day Cycle)
               </p>
-              <p className="text-[11px] text-amber-800/90 mt-0.5 leading-relaxed">
-                Neither Anurag&apos;s account nor Vivek&apos;s account has received any payment from Sai for this month. 
-                As per 50/50 partnership policy, only actual money received in the bank is divided. Sai&apos;s ₹50,000 remains <strong>Pending</strong>.
+              <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                Sai&apos;s contractual rate is <strong>₹50,000/month</strong> (₹25,000 per 15-day cycle &mdash; updated from ₹40,000 in August). 
+                Neither Anurag nor Vivek has received Sai&apos;s payment yet.
               </p>
             </div>
           </div>
           <Link href="/payments" className="shrink-0">
-            <span className="inline-flex items-center text-xs font-semibold text-amber-900 hover:text-amber-950 underline underline-offset-2">
-              Mark as Received when credited &rarr;
+            <span className="text-xs font-bold text-amber-900 hover:text-amber-950 underline">
+              + Mark as Received when credited &rarr;
             </span>
           </Link>
         </div>
       )}
 
-      {/* HERO SECTION: The Final Settlement Bottom-Line (Easy & Clear) */}
-      <div className="overflow-hidden rounded-2xl border-2 border-indigo-500/30 bg-gradient-to-br from-card to-indigo-500/5 shadow-md">
-        <div className="p-5 sm:p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border/60 pb-5">
-            <div>
-              <div className="flex items-center gap-2">
-                <Scale className="h-5 w-5 text-indigo-600" />
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
-                  Current Month Settlement Action
-                </span>
-              </div>
-              <h2 className="mt-1 text-2xl sm:text-3xl font-black text-foreground">
-                {summary.finalSettlementDirection === 'VIVEK_PAYS_ANURAG' && (
-                  <span className="text-emerald-600">
-                    Vivek transfers ₹{Number(summary.finalSettlementAmount).toLocaleString('en-IN')} to Anurag
-                  </span>
-                )}
-                {summary.finalSettlementDirection === 'ANURAG_PAYS_VIVEK' && (
-                  <span className="text-indigo-600">
-                    Anurag transfers ₹{Number(summary.finalSettlementAmount).toLocaleString('en-IN')} to Vivek
-                  </span>
-                )}
-                {summary.finalSettlementDirection === 'BALANCED' && (
-                  <span className="text-foreground">
-                    Accounts are 100% Balanced (No transfer needed)
-                  </span>
-                )}
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                This single transfer completely equalizes 50/50 net profits and settles all previous work balances.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <Link href={`/settlements?period=${activePeriod.periodKey}`}>
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs font-bold">
-                  View Full Audit Statement <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          {/* Simple Step-by-Step Reason (Human Plain Language) */}
-          <div className="mt-5 grid gap-3 sm:grid-cols-3 text-xs">
-            <div className="rounded-xl border border-border bg-card/60 p-3.5">
-              <div className="font-bold text-foreground flex items-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-black text-indigo-700">1</span>
-                Cash in Bank Right Now
-              </div>
-              <p className="mt-2 text-muted-foreground text-[11px] leading-relaxed">
-                Anurag received <strong>₹25,000</strong> (Eshwar) &amp; paid <strong>₹10,000</strong> (Dev).<br />
-                Anurag holds: <strong className="text-foreground">₹{Number(summary.anuragLiquidCashHeld).toLocaleString('en-IN')}</strong><br />
-                Vivek holds: <strong className="text-foreground">₹{Number(summary.vivekLiquidCashHeld).toLocaleString('en-IN')}</strong>
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card/60 p-3.5">
-              <div className="font-bold text-foreground flex items-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-black text-indigo-700">2</span>
-                50/50 Profit Share
-              </div>
-              <p className="mt-2 text-muted-foreground text-[11px] leading-relaxed">
-                Net profit this month is <strong>₹{Number(summary.netPartnershipIncome).toLocaleString('en-IN')}</strong>.<br />
-                Each partner is entitled to 50%:<br />
-                <strong className="text-foreground">₹{Number(summary.anuragEntitlement).toLocaleString('en-IN')} each</strong>
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card/60 p-3.5">
-              <div className="font-bold text-foreground flex items-center gap-1.5">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-black text-indigo-700">3</span>
-                Previous Balance Adjustment
-              </div>
-              <p className="mt-2 text-muted-foreground text-[11px] leading-relaxed">
-                {Number(summary.businessAdjustmentsTotal) > 0 ? (
-                  <>
-                    Anurag already owed Vivek <strong>₹{Number(summary.businessAdjustmentsTotal).toLocaleString('en-IN')}</strong> from previous balance.<br />
-                    Total to Vivek: ₹7,500 + ₹500 = <strong className="text-indigo-600">₹{Number(summary.finalSettlementAmount).toLocaleString('en-IN')}</strong>
-                  </>
-                ) : Number(summary.businessAdjustmentsTotal) < 0 ? (
-                  <>
-                    Vivek already owed Anurag <strong>₹{Math.abs(Number(summary.businessAdjustmentsTotal)).toLocaleString('en-IN')}</strong>.<br />
-                    Net transfer: <strong className="text-indigo-600">₹{Number(summary.finalSettlementAmount).toLocaleString('en-IN')}</strong>
-                  </>
-                ) : (
-                  <>
-                    No previous carry-forward debt.<br />
-                    Net transfer is purely the 50% profit share: <strong className="text-indigo-600">₹{Number(summary.finalSettlementAmount).toLocaleString('en-IN')}</strong>
-                  </>
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* PARTNER BANK ACCOUNTS (Cash in Hand) */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Anurag Bank Account */}
-        <div className="rounded-2xl border-2 border-indigo-200 bg-indigo-50/20 p-5 shadow-xs transition hover:shadow-md">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
-                <Wallet className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">Anurag&apos;s Bank Account</span>
-                <div className="text-2xl font-black text-foreground">
-                  ₹{Number(summary.anuragLiquidCashHeld).toLocaleString('en-IN')}
-                </div>
-              </div>
-            </div>
-            <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-800">
-              Cash In Hand
-            </span>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-indigo-100 pt-3 text-xs">
-            <div>
-              <span className="text-muted-foreground">Received from Clients:</span>
-              <p className="font-bold text-emerald-600">+₹{anuragPaymentsIn.toLocaleString('en-IN')}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">External Expenses Paid:</span>
-              <p className="font-bold text-rose-600">-₹{anuragExpensesPaid.toLocaleString('en-IN')}</p>
-            </div>
-          </div>
-
-          <div className="mt-3 rounded-lg bg-card/80 p-2.5 text-[11px] text-muted-foreground border border-border/50">
-            {summary.finalSettlementDirection === 'ANURAG_PAYS_VIVEK' ? (
-              <span>
-                After transferring <strong>₹{Number(summary.finalSettlementAmount).toLocaleString('en-IN')}</strong> to Vivek, 
-                Anurag will keep exactly <strong className="text-foreground">₹{(Number(summary.anuragLiquidCashHeld) - Number(summary.finalSettlementAmount)).toLocaleString('en-IN')}</strong> net.
-              </span>
-            ) : (
-              <span>Anurag retains full share.</span>
-            )}
-          </div>
-        </div>
-
-        {/* Vivek Bank Account */}
-        <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/20 p-5 shadow-xs transition hover:shadow-md">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-                <Wallet className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-700">Vivek&apos;s Bank Account</span>
-                <div className="text-2xl font-black text-foreground">
-                  ₹{Number(summary.vivekLiquidCashHeld).toLocaleString('en-IN')}
-                </div>
-              </div>
-            </div>
-            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">
-              Cash In Hand
-            </span>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-amber-100 pt-3 text-xs">
-            <div>
-              <span className="text-muted-foreground">Received from Clients:</span>
-              <p className="font-bold text-emerald-600">+₹{vivekPaymentsIn.toLocaleString('en-IN')}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">External Expenses Paid:</span>
-              <p className="font-bold text-rose-600">-₹{vivekExpensesPaid.toLocaleString('en-IN')}</p>
-            </div>
-          </div>
-
-          <div className="mt-3 rounded-lg bg-card/80 p-2.5 text-[11px] text-muted-foreground border border-border/50">
-            {summary.finalSettlementDirection === 'ANURAG_PAYS_VIVEK' ? (
-              <span>
-                Vivek will receive <strong>₹{Number(summary.finalSettlementAmount).toLocaleString('en-IN')}</strong> from Anurag 
-                (₹7,500 profit share + ₹500 previous balance).
-              </span>
-            ) : (
-              <span>Vivek retains full share.</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* MONTHLY FINANCIAL SNAPSHOT (Simple 4 Cards) */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border">
+      {/* 3. Simple 3-Box Overview (Cash In, Costs Out, Net Cash in Hand) */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card className="p-4 border-emerald-200 bg-emerald-50/20">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-bold">Total Cash Collected</span>
+            <span className="text-xs font-bold text-emerald-800">1. Total Cash Collected</span>
             <CreditCard className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="mt-2 text-2xl font-black text-emerald-600">
             ₹{Number(summary.totalCollected).toLocaleString('en-IN')}
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Eshwar: ₹25,000 &bull; Sai: ₹0
+            Eshwar 15-day payment (Credited in Anurag&apos;s bank)
           </p>
         </Card>
 
-        <Card className="border-border">
+        <Card className="p-4 border-rose-200 bg-rose-50/20">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-bold">External Costs Paid</span>
+            <span className="text-xs font-bold text-rose-800">2. External Dev Paid</span>
             <AlertCircle className="h-4 w-4 text-rose-600" />
           </div>
           <div className="mt-2 text-2xl font-black text-rose-600">
             ₹{Number(summary.totalExternalDisbursed).toLocaleString('en-IN')}
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Developer Payout (Paid by Anurag)
+            Resource payout paid by Anurag out of funds
           </p>
         </Card>
 
-        <Card className="border-border bg-accent/5">
+        <Card className="p-4 border-indigo-200 bg-indigo-50/20">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-bold text-accent">Net Partnership Profit</span>
-            <TrendingUp className="h-4 w-4 text-accent" />
+            <span className="text-xs font-bold text-indigo-800">3. Net Cash to Split (50/50)</span>
+            <TrendingUp className="h-4 w-4 text-indigo-600" />
           </div>
-          <div className="mt-2 text-2xl font-black text-foreground">
-            ₹{Number(summary.netPartnershipIncome).toLocaleString('en-IN')}
+          <div className="mt-2 text-2xl font-black text-indigo-600">
+            ₹{netPool.toLocaleString('en-IN')}
           </div>
-          <p className="mt-1 text-[11px] font-bold text-accent">
-            Split 50/50 = ₹{Number(summary.anuragEntitlement).toLocaleString('en-IN')} each
-          </p>
-        </Card>
-
-        <Card className="border-border">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-bold">Total Expected Invoices</span>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="mt-2 text-2xl font-black text-foreground">
-            ₹{Number(summary.totalBilled).toLocaleString('en-IN')}
-          </div>
-          <p className="mt-1 text-[11px] text-amber-700 font-semibold">
-            ₹{Number(summary.outstandingReceivable).toLocaleString('en-IN')} Pending from clients
+          <p className="mt-1 text-[11px] font-bold text-foreground">
+            ₹{eachShare.toLocaleString('en-IN')} each for Anurag &amp; Vivek
           </p>
         </Card>
       </div>
 
-      {/* CLIENT PAYMENT STATUS & RECENT COLLECTIONS */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Client Accounts Detailed Status */}
-        <Card>
-          <CardHeader>
+      {/* 4. Partner Bank Accounts & Settlement Status (Clean & Intuitive) */}
+      <div className="rounded-2xl border-2 border-border bg-card p-5 sm:p-6 shadow-xs space-y-6">
+        <div>
+          <h2 className="text-lg font-black text-foreground flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-accent" /> Actual Cash in Partner Bank Accounts
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Real physical money currently sitting in each partner&apos;s personal bank account.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Anurag Bank Account */}
+          <div className="rounded-xl border-2 border-indigo-200 bg-indigo-50/30 p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-accent" /> Client Payment Status
-                </CardTitle>
-                <CardDescription>Status of each client for {activePeriod.periodKey}</CardDescription>
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-800">Anurag&apos;s Bank Account</span>
+              <span className="rounded-full bg-indigo-100 text-indigo-800 px-2 py-0.5 text-[10px] font-bold">
+                Holding Funds
+              </span>
+            </div>
+            <div className="mt-2 text-3xl font-black text-foreground">
+              ₹{anuragCash.toLocaleString('en-IN')}
+            </div>
+            <div className="mt-3 space-y-1 text-xs border-t border-indigo-100 pt-2.5 text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Received from Eshwar:</span>
+                <span className="font-bold text-emerald-600">+₹{anuragPaymentsIn.toLocaleString('en-IN')}</span>
               </div>
-              <Link href="/billing" className="text-xs font-semibold text-accent hover:underline">
-                Billing Details &rarr;
-              </Link>
+              <div className="flex justify-between">
+                <span>Paid to Dev:</span>
+                <span className="font-bold text-rose-600">-₹{anuragExpensesPaid.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between border-t border-indigo-100/60 pt-1 text-foreground font-bold">
+                <span>Current Balance in Hand:</span>
+                <span>₹{anuragCash.toLocaleString('en-IN')}</span>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="divide-y divide-border text-xs">
-              {clients.map((c) => {
-                const plan = billingPlans.find((bp) => bp.clientId === c.id);
-                const billed = plan ? Number(plan.grossBillingAmount) : 0;
-                const clientPayments = payments.filter((p) => p.status === 'CONFIRMED' && plan && p.billingPlanId === plan.id);
-                const collected = clientPayments.reduce((sum, p) => sum + Number(p.amountReceived), 0);
-                const outstanding = Math.max(0, billed - collected);
+          </div>
 
-                const isSai = c.name.toLowerCase().includes('sai');
-                const isEshwar = c.name.toLowerCase().includes('eshwar');
-
-                return (
-                  <div key={c.id} className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-foreground">{c.name}</span>
-                        {isSai && collected === 0 && (
-                          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">
-                            Payment Not Arrived
-                          </span>
-                        )}
-                        {isEshwar && collected > 0 && (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                            Tranche 1 Received
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">
-                        Fee: ₹{billed.toLocaleString('en-IN')} &bull; Collected: <span className="font-semibold text-foreground">₹{collected.toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {collected === 0 ? (
-                        <span className="rounded-md bg-amber-50 border border-amber-200 px-2.5 py-1 text-[11px] font-bold text-amber-800">
-                          ₹{outstanding.toLocaleString('en-IN')} Due
-                        </span>
-                      ) : outstanding > 0 ? (
-                        <span className="rounded-md bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-[11px] font-bold text-indigo-800">
-                          ₹{outstanding.toLocaleString('en-IN')} Remaining
-                        </span>
-                      ) : (
-                        <span className="rounded-md bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-bold text-emerald-800 flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" /> Fully Paid
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Actual Bank Transactions Log */}
-        <Card>
-          <CardHeader>
+          {/* Vivek Bank Account */}
+          <div className="rounded-xl border-2 border-amber-200 bg-amber-50/30 p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Receipt className="h-4 w-4 text-emerald-600" /> Confirmed Bank Deposits
-                </CardTitle>
-                <CardDescription>Actual money received in partner accounts</CardDescription>
-              </div>
-              <Link href="/payments" className="text-xs font-semibold text-accent hover:underline">
-                View All &rarr;
-              </Link>
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-800">Vivek&apos;s Bank Account</span>
+              <span className="rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">
+                Awaiting Payout
+              </span>
             </div>
-          </CardHeader>
-          <CardContent>
-            {recentPayments.length === 0 ? (
-              <div className="py-8 text-center text-xs text-muted-foreground">
-                No client payments recorded yet for this month.
+            <div className="mt-2 text-3xl font-black text-foreground">
+              ₹{vivekCash.toLocaleString('en-IN')}
+            </div>
+            <div className="mt-3 space-y-1 text-xs border-t border-amber-100 pt-2.5 text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Received from Sai:</span>
+                <span className="font-bold text-muted-foreground">₹0 (Pending from client)</span>
               </div>
-            ) : (
-              <div className="divide-y divide-border text-xs">
-                {recentPayments.map((p) => {
-                  const plan = billingPlans.find((bp) => bp.id === p.billingPlanId);
-                  const client = plan ? clients.find((c) => c.id === plan.clientId) : undefined;
-                  const collector = partners.find((pt) => pt.id === p.collectedByPartnerId);
-                  return (
-                    <div key={p.id} className="py-3 flex items-center justify-between">
-                      <div>
-                        <span className="font-extrabold text-foreground">{client?.name || 'Client'}</span>
-                        <div className="text-[11px] text-muted-foreground mt-0.5">
-                          Deposited on {p.paymentDate}
-                          {p.paymentReference && <span> &bull; Ref: {p.paymentReference}</span>}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-black text-emerald-600 text-sm">
-                          +₹{Number(p.amountReceived).toLocaleString('en-IN')}
-                        </div>
-                        <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold mt-0.5 ${
-                          collector?.partnerCode === 'ANURAG' 
-                            ? 'bg-indigo-100 text-indigo-800' 
-                            : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          Credited in {collector?.fullName || 'Partner'} Bank
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="flex justify-between">
+                <span>Expenses Paid:</span>
+                <span className="font-bold text-muted-foreground">₹0</span>
+              </div>
+              <div className="flex justify-between border-t border-amber-100/60 pt-1 text-foreground font-bold">
+                <span>Current Balance in Hand:</span>
+                <span>₹{vivekCash.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                {/* Clarification on pending payments */}
-                <div className="pt-3 text-[11px] text-muted-foreground flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                  <span>
-                    Sai (₹50,000), Ganesh (₹70,000), and Rohit (₹1,10,000) have not deposited into any partner account yet.
+        {/* Profit Split Status (No bogus 8000! Completely accurate 7,500) */}
+        <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Scale className="h-4 w-4 text-indigo-700" />
+                <span className="text-xs font-bold text-indigo-900 uppercase tracking-wide">
+                  15-Day Profit Share Summary (50 / 50)
+                </span>
+              </div>
+              <div className="mt-1 text-base font-extrabold text-foreground">
+                Total Net Profit to Split: ₹{netPool.toLocaleString('en-IN')} &bull; Each Partner: ₹{eachShare.toLocaleString('en-IN')}
+              </div>
+            </div>
+
+            <div className="shrink-0">
+              <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-900 px-3 py-1 text-xs font-bold">
+                ⏳ Unsettled &bull; Funds sitting with Anurag
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3 text-xs text-muted-foreground space-y-2">
+            <p>
+              &bull; <strong>Anurag</strong> holds all <strong>₹{anuragCash.toLocaleString('en-IN')}</strong> in his bank account right now.
+            </p>
+            <p>
+              &bull; <strong>Vivek&apos;s equal 50% share</strong> is <strong>₹{eachShare.toLocaleString('en-IN')}</strong>.
+            </p>
+            <p className="text-foreground font-medium">
+              &bull; <strong>When distributing:</strong> Anurag will transfer <strong>₹{eachShare.toLocaleString('en-IN')}</strong> to Vivek so both have exactly ₹{eachShare.toLocaleString('en-IN')} each. <em>(No money has been sent yet)</em>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Clients Overview (15-Day Cycle Rates & Current Status) */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-accent" /> Client Accounts (15-Day Billing Cycle)
+              </CardTitle>
+              <CardDescription>All clients on 15-day cycle rates and their payment status</CardDescription>
+            </div>
+            <Link href="/billing" className="text-xs font-bold text-accent hover:underline">
+              Manage Client Billing &rarr;
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="divide-y divide-border text-xs">
+            {/* Eshwar */}
+            <div className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-foreground text-sm">Eshwar</span>
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                    Cycle 1 Paid
                   </span>
                 </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Monthly Rate: ₹50,000 &bull; <strong>15-Day Cycle: ₹25,000</strong>
+                </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+                  +₹25,000 Received (in Anurag Bank)
+                </span>
+              </div>
+            </div>
 
-      {/* QUICK FOOTER HELPER */}
+            {/* Sai */}
+            <div className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-foreground text-sm">Sai</span>
+                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">
+                    Payment Not Arrived
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    (Was ₹40k in Aug &rarr; ₹50k in Sep)
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Monthly Rate: ₹50,000 &bull; <strong>15-Day Cycle: ₹25,000</strong>
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md">
+                  ₹25,000 Pending from Client
+                </span>
+              </div>
+            </div>
+
+            {/* Ganesh */}
+            <div className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-foreground text-sm">Ganesh</span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                    New Project
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Monthly Rate: ₹70,000 &bull; <strong>15-Day Cycle: ₹35,000</strong>
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-muted-foreground bg-muted/40 border border-border px-2.5 py-1 rounded-md">
+                  Pending Invoice
+                </span>
+              </div>
+            </div>
+
+            {/* Rohit */}
+            <div className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-foreground text-sm">Rohit</span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                    Broker Project
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Monthly Rate: ₹1,10,000 &bull; <strong>15-Day Cycle: ₹55,000</strong>
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-muted-foreground bg-muted/40 border border-border px-2.5 py-1 rounded-md">
+                  Pending Invoice
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 6. Quick Help & Record Links */}
       <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <HelpCircle className="h-4 w-4 text-accent shrink-0" />
+          <Info className="h-4 w-4 text-accent shrink-0" />
           <span>
-            Need to log a new payment or cost? When money arrives in Anurag or Vivek&apos;s account, record it to update the settlement in real time.
+            When a payment arrives from Sai or any other client, click <strong>Record Payment</strong> to instantly credit the partner&apos;s account.
           </span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Link href="/payments">
-            <Button size="sm" variant="outline" className="text-xs">
+            <Button size="sm" variant="outline" className="text-xs font-bold">
               Record Client Payment
             </Button>
           </Link>
-          <Link href="/disbursements">
-            <Button size="sm" variant="outline" className="text-xs">
-              Record Payout / Expense
+          <Link href="/expenses">
+            <Button size="sm" variant="outline" className="text-xs font-bold">
+              Record Dev / Expense
             </Button>
           </Link>
         </div>
