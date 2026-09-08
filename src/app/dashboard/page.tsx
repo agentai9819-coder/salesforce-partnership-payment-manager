@@ -20,6 +20,7 @@ import {
   Building2,
   PlusCircle,
   Info,
+  Database,
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -126,6 +127,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </Button>
           </form>
 
+          <Link href="/admin">
+            <Button size="sm" variant="outline" className="gap-1.5 border-accent text-accent hover:bg-accent/10 text-xs font-bold">
+              <Database className="h-3.5 w-3.5" /> Admin Tables
+            </Button>
+          </Link>
+
           <Link href="/payments">
             <Button size="sm" className="gap-1.5 bg-accent hover:bg-accent/90 text-white text-xs font-bold">
               <PlusCircle className="h-3.5 w-3.5" /> Record Payment
@@ -168,7 +175,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             ₹{Number(summary.totalCollected).toLocaleString('en-IN')}
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Eshwar 15-day payment (Credited in Anurag&apos;s bank)
+            {saiPaid > 0 ? 'Eshwar (₹25k) & Sai (₹25k) received' : 'Eshwar 15-day payment (Credited in Anurag bank)'}
           </p>
         </Card>
 
@@ -243,7 +250,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-amber-800">Vivek&apos;s Bank Account</span>
               <span className="rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">
-                Awaiting Payout
+                Holding Funds
               </span>
             </div>
             <div className="mt-2 text-3xl font-black text-foreground">
@@ -251,12 +258,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </div>
             <div className="mt-3 space-y-1 text-xs border-t border-amber-100 pt-2.5 text-muted-foreground">
               <div className="flex justify-between">
-                <span>Received from Sai:</span>
-                <span className="font-bold text-muted-foreground">₹0 (Pending from client)</span>
+                <span>Received from Clients:</span>
+                <span className="font-bold text-emerald-600">+₹{vivekPaymentsIn.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between">
                 <span>Expenses Paid:</span>
-                <span className="font-bold text-muted-foreground">₹0</span>
+                <span className="font-bold text-rose-600">-₹{vivekExpensesPaid.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between border-t border-amber-100/60 pt-1 text-foreground font-bold">
                 <span>Current Balance in Hand:</span>
@@ -266,7 +273,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </div>
         </div>
 
-        {/* Profit Split Status (No bogus 8000! Completely accurate 7,500) */}
+        {/* Profit Split Status */}
         <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 pb-3">
             <div>
@@ -283,20 +290,26 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
             <div className="shrink-0">
               <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-900 px-3 py-1 text-xs font-bold">
-                ⏳ Unsettled &bull; Funds sitting with Anurag
+                ⏳ Unsettled &bull; In Bank Accounts
               </span>
             </div>
           </div>
 
           <div className="mt-3 text-xs text-muted-foreground space-y-2">
             <p>
-              &bull; <strong>Anurag</strong> holds all <strong>₹{anuragCash.toLocaleString('en-IN')}</strong> in his bank account right now.
+              &bull; <strong>Anurag Bank:</strong> Holds ₹{anuragCash.toLocaleString('en-IN')} &bull; <strong>Vivek Bank:</strong> Holds ₹{vivekCash.toLocaleString('en-IN')}
             </p>
             <p>
-              &bull; <strong>Vivek&apos;s equal 50% share</strong> is <strong>₹{eachShare.toLocaleString('en-IN')}</strong>.
+              &bull; <strong>Each Partner&apos;s Equal 50% Share:</strong> <strong>₹{eachShare.toLocaleString('en-IN')} each</strong>
             </p>
             <p className="text-foreground font-medium">
-              &bull; <strong>When distributing:</strong> Anurag will transfer <strong>₹{eachShare.toLocaleString('en-IN')}</strong> to Vivek so both have exactly ₹{eachShare.toLocaleString('en-IN')} each. <em>(No money has been sent yet)</em>.
+              &bull; <strong>Equalization Action:</strong> {
+                summary.finalSettlementDirection === 'VIVEK_PAYS_ANURAG'
+                  ? `Vivek transfers ₹${Number(summary.finalSettlementAmount).toLocaleString('en-IN')} to Anurag so both have exactly ₹${eachShare.toLocaleString('en-IN')} each.`
+                  : summary.finalSettlementDirection === 'ANURAG_PAYS_VIVEK'
+                  ? `Anurag transfers ₹${Number(summary.finalSettlementAmount).toLocaleString('en-IN')} to Vivek so both have exactly ₹${eachShare.toLocaleString('en-IN')} each.`
+                  : 'Partner accounts are 100% equalized!'
+              }
             </p>
           </div>
         </div>
@@ -344,9 +357,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-foreground text-sm">Sai</span>
-                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">
-                    Payment Not Arrived
-                  </span>
+                  {saiPaid > 0 ? (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                      Cycle 1 Paid
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">
+                      Payment Not Arrived
+                    </span>
+                  )}
                   <span className="text-[10px] text-muted-foreground">
                     (Was ₹40k in Aug &rarr; ₹50k in Sep)
                   </span>
@@ -356,9 +375,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md">
-                  ₹25,000 Pending from Client
-                </span>
+                {saiPaid > 0 ? (
+                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+                    +₹{saiPaid.toLocaleString('en-IN')} Received
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md">
+                    ₹25,000 Pending from Client
+                  </span>
+                )}
               </div>
             </div>
 

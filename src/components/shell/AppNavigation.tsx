@@ -13,6 +13,7 @@ import {
   Scale,
   History,
   Settings,
+  Database,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: '/payments', label: 'Client Payments', icon: CreditCard },
   { href: '/expenses', label: 'External Costs', icon: Briefcase },
   { href: '/settlements', label: 'Settlements', icon: Scale },
+  { href: '/admin', label: 'Admin Tables', icon: Database },
   { href: '/audit', label: 'Audit Trail', icon: History },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];

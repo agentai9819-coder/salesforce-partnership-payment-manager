@@ -158,7 +158,7 @@ export interface SettlementPeriod {
   createdAt: string;
 }
 
-export type AuditAction = 'INSERT' | 'UPDATE' | 'VOID' | 'STATUS_CHANGE';
+export type AuditAction = 'INSERT' | 'UPDATE' | 'VOID' | 'STATUS_CHANGE' | 'DELETE';
 
 export interface AuditLog {
   id: string;

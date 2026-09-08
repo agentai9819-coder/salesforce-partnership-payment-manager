@@ -703,6 +703,140 @@ export class DatabaseRepository {
     if (!this.inTransaction) this.saveToDisk(this.data);
   }
 
+  public getAllData(): DatabaseSchema {
+    return this.data;
+  }
+
+  public updatePayment(id: string, updates: Partial<ClientPayment>, actorPartnerId: string): ClientPayment {
+    const payment = this.data.clientPayments.find((p) => p.id === id);
+    if (!payment) throw new Error(`Payment ${id} not found`);
+    const oldData = { ...payment };
+    Object.assign(payment, updates, { updatedAt: new Date().toISOString() });
+    if (updates.amountReceived) {
+      payment.amountReceived = Number(updates.amountReceived).toFixed(2);
+    }
+    this.logAudit({
+      organizationId: this.data.organizations[0]?.id || 'default-org',
+      actorPartnerId,
+      entityName: 'client_payments',
+      entityId: id,
+      action: 'UPDATE',
+      oldData: oldData as unknown as Record<string, unknown>,
+      newData: payment as unknown as Record<string, unknown>,
+      changeReason: 'Admin manual update of payment record',
+    });
+    if (!this.inTransaction) this.saveToDisk(this.data);
+    return payment;
+  }
+
+  public deletePayment(id: string, actorPartnerId: string): void {
+    const index = this.data.clientPayments.findIndex((p) => p.id === id);
+    if (index === -1) throw new Error(`Payment ${id} not found`);
+    const removed = this.data.clientPayments.splice(index, 1)[0];
+    this.logAudit({
+      organizationId: this.data.organizations[0]?.id || 'default-org',
+      actorPartnerId,
+      entityName: 'client_payments',
+      entityId: id,
+      action: 'DELETE',
+      oldData: removed as unknown as Record<string, unknown>,
+      changeReason: 'Admin manual deletion of payment record',
+    });
+    if (!this.inTransaction) this.saveToDisk(this.data);
+  }
+
+  public updateBillingPlan(id: string, updates: Partial<ClientBillingPlan>, actorPartnerId: string): ClientBillingPlan {
+    const plan = this.data.clientBillingPlans.find((p) => p.id === id);
+    if (!plan) throw new Error(`Billing plan ${id} not found`);
+    const oldData = { ...plan };
+    Object.assign(plan, updates, { updatedAt: new Date().toISOString() });
+    if (updates.grossBillingAmount) {
+      plan.grossBillingAmount = Number(updates.grossBillingAmount).toFixed(2);
+    }
+    this.logAudit({
+      organizationId: this.data.organizations[0]?.id || 'default-org',
+      actorPartnerId,
+      entityName: 'client_billing_plans',
+      entityId: id,
+      action: 'UPDATE',
+      oldData: oldData as unknown as Record<string, unknown>,
+      newData: plan as unknown as Record<string, unknown>,
+      changeReason: 'Admin manual update of billing plan',
+    });
+    if (!this.inTransaction) this.saveToDisk(this.data);
+    return plan;
+  }
+
+  public deleteBillingPlan(id: string, actorPartnerId: string): void {
+    const index = this.data.clientBillingPlans.findIndex((p) => p.id === id);
+    if (index === -1) throw new Error(`Billing plan ${id} not found`);
+    const removed = this.data.clientBillingPlans.splice(index, 1)[0];
+    this.logAudit({
+      organizationId: this.data.organizations[0]?.id || 'default-org',
+      actorPartnerId,
+      entityName: 'client_billing_plans',
+      entityId: id,
+      action: 'DELETE',
+      oldData: removed as unknown as Record<string, unknown>,
+      changeReason: 'Admin manual deletion of billing plan',
+    });
+    if (!this.inTransaction) this.saveToDisk(this.data);
+  }
+
+  public updateExternalDisbursement(id: string, updates: Partial<ExternalDisbursement>, actorPartnerId: string): ExternalDisbursement {
+    const disb = this.data.externalDisbursements.find((d) => d.id === id);
+    if (!disb) throw new Error(`Disbursement ${id} not found`);
+    const oldData = { ...disb };
+    Object.assign(disb, updates, { updatedAt: new Date().toISOString() });
+    if (updates.amountPaid) {
+      disb.amountPaid = Number(updates.amountPaid).toFixed(2);
+    }
+    this.logAudit({
+      organizationId: this.data.organizations[0]?.id || 'default-org',
+      actorPartnerId,
+      entityName: 'external_disbursements',
+      entityId: id,
+      action: 'UPDATE',
+      oldData: oldData as unknown as Record<string, unknown>,
+      newData: disb as unknown as Record<string, unknown>,
+      changeReason: 'Admin manual update of disbursement',
+    });
+    if (!this.inTransaction) this.saveToDisk(this.data);
+    return disb;
+  }
+
+  public deleteExternalDisbursement(id: string, actorPartnerId: string): void {
+    const index = this.data.externalDisbursements.findIndex((d) => d.id === id);
+    if (index === -1) throw new Error(`Disbursement ${id} not found`);
+    const removed = this.data.externalDisbursements.splice(index, 1)[0];
+    this.logAudit({
+      organizationId: this.data.organizations[0]?.id || 'default-org',
+      actorPartnerId,
+      entityName: 'external_disbursements',
+      entityId: id,
+      action: 'DELETE',
+      oldData: removed as unknown as Record<string, unknown>,
+      changeReason: 'Admin manual deletion of disbursement',
+    });
+    if (!this.inTransaction) this.saveToDisk(this.data);
+  }
+
+  public deleteClient(id: string, actorPartnerId: string): void {
+    const index = this.data.clients.findIndex((c) => c.id === id);
+    if (index === -1) throw new Error(`Client ${id} not found`);
+    const removed = this.data.clients.splice(index, 1)[0];
+    this.logAudit({
+      organizationId: this.data.organizations[0]?.id || 'default-org',
+      actorPartnerId,
+      entityName: 'clients',
+      entityId: id,
+      action: 'DELETE',
+      oldData: removed as unknown as Record<string, unknown>,
+      changeReason: 'Admin manual deletion of client',
+    });
+    if (!this.inTransaction) this.saveToDisk(this.data);
+  }
+
   // --- Baseline Seed Generator ---
   private createInitialSeed(): DatabaseSchema {
     const orgId = '00000000-0000-0000-0000-000000000001';
@@ -875,6 +1009,20 @@ export class DatabaseRepository {
           createdByPartnerId: anuragId,
           createdAt: '2026-09-01T12:00:00Z',
           updatedAt: '2026-09-01T12:00:00Z',
+        },
+        {
+          id: 'pay-sep-sai',
+          billingPlanId: 'cbp-sai-sep',
+          collectedByPartnerId: vivekId,
+          paymentDate: '2026-09-02',
+          amountReceived: '25000.00',
+          paymentReference: 'SAI-1-15-SEP',
+          status: 'CONFIRMED',
+          notes: 'September 1-15 payment received',
+          idempotencyKey: 'idem-sai-sep-01',
+          createdByPartnerId: vivekId,
+          createdAt: '2026-09-02T10:00:00Z',
+          updatedAt: '2026-09-02T10:00:00Z',
         },
       ],
       externalParties: [
