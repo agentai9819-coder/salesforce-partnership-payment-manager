@@ -393,8 +393,8 @@ export function DoorGateway({ partners, isInitiallyUnlocked }: DoorGatewayProps)
                     </button>
                   </form>
 
-                  <div className="pt-2 text-[11px] text-slate-400 font-mono">
-                    Default Passcode: <code className="text-indigo-400 font-bold">SFDC@2026</code>
+                  <div className="pt-2 text-[11px] text-slate-500 font-mono">
+                    Authorized Personnel Only &bull; Access Logged
                   </div>
                 </div>
               </div>
