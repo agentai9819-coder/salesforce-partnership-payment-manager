@@ -7,6 +7,9 @@ import { LogOut } from 'lucide-react';
 
 export async function AppHeader() {
   const currentPartner = await getCurrentPartner();
+  if (!currentPartner) {
+    return null;
+  }
   const isDev = process.env.NODE_ENV !== 'production';
 
   return (

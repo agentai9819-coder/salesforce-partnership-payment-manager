@@ -49,7 +49,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-[75vh] items-center justify-center py-6">
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 p-2 sm:p-6 overflow-hidden">
       <DoorGateway
         partners={partners}
         isInitiallyUnlocked={isInitiallyUnlocked}

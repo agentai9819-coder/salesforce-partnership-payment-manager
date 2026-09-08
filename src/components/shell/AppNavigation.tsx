@@ -29,6 +29,10 @@ const NAV_ITEMS = [
 export function AppNavigation() {
   const pathname = usePathname();
 
+  if (pathname === '/login') {
+    return null;
+  }
+
   return (
     <nav className="border-b border-border bg-card">
       <div className="mx-auto flex max-w-7xl overflow-x-auto px-4 py-2 sm:px-6 scrollbar-none">
