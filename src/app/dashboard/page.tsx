@@ -33,7 +33,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const { partner, organizationId } = await requireAuthenticatedPartner();
 
   const periods = db.getBillingPeriods(organizationId);
-  const currentPeriodKey = searchParams?.period || '2026-09';
+  // Default to Cycle 2 (Sep 16 - Sep 30)
+  const currentPeriodKey = searchParams?.period || '2026-09-C2';
   const activePeriod = db.ensureBillingPeriod(organizationId, currentPeriodKey);
 
   const partners = db.getPartners(organizationId);
@@ -45,6 +46,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const payments = db.getPaymentsForPeriod(activePeriod.id);
   const disbursements = db.getExternalDisbursements(activePeriod.id);
   const adjustments = db.getBusinessAdjustments(activePeriod.id);
+
+  // Helper for period labels
+  const getPeriodLabel = (key: string) => {
+    if (key === '2026-09-C2') return 'Sep 16 - Sep 30 (Cycle 2 - Current)';
+    if (key === '2026-09-C1') return 'Sep 1 - Sep 15 (Cycle 1)';
+    if (key === '2026-09') return 'September 2026 (Consolidated)';
+    if (key === '2026-08') return 'August 2026 (Closed)';
+    return key;
+  };
 
   // Derive metrics strictly from authoritative records
   const summary = calculateMonthlySettlement({
@@ -104,7 +114,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Current Cycle: <strong>Sep 1 &ndash; Sep 15, 2026</strong> &bull; Anurag &amp; Vivek Shared Ledger
+            Current View: <strong>{getPeriodLabel(activePeriod.periodKey)}</strong> &bull; Anurag &amp; Vivek Shared Ledger
           </p>
         </div>
 
@@ -118,7 +128,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             >
               {periods.map((p) => (
                 <option key={p.id} value={p.periodKey}>
-                  {p.periodKey === '2026-09' ? 'Sep 1 - Sep 15 (Current Cycle)' : p.periodKey === '2026-08' ? 'August 2026 (Closed)' : p.periodKey}
+                  {getPeriodLabel(p.periodKey)}
                 </option>
               ))}
             </select>
@@ -141,28 +151,43 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
       </div>
 
-      {/* 2. Notice: Sai Payment Status */}
-      {saiPaid === 0 && (
+      {/* 2. Notice: Cycle Status Banner */}
+      {activePeriod.periodKey === '2026-09-C2' ? (
         <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-4 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-bold text-amber-900">
-                Sai Payment Status: ₹0 Received (Payment Pending for this 15-Day Cycle)
+                Cycle 2 (Sep 16 &ndash; Sep 30) Status: Sai Payment of ₹30,000 is PENDING
               </p>
               <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                Sai&apos;s contractual rate is <strong>₹50,000/month</strong> (₹25,000 per 15-day cycle &mdash; updated from ₹40,000 in August). 
-                Neither Anurag nor Vivek has received Sai&apos;s payment yet.
+                Sai&apos;s September contract is <strong>₹50,000</strong> total. Cycle 1 (Sep 1&ndash;15) was <strong>₹20,000</strong> (paid to Vivek). 
+                The rest amount of <strong>₹30,000</strong> is <strong>pending</strong> and has not been received yet. Eshwar has paid his <strong>₹25,000</strong> for Cycle 2 to Anurag.
               </p>
             </div>
           </div>
           <Link href="/payments" className="shrink-0">
-            <span className="text-xs font-bold text-amber-900 hover:text-amber-950 underline">
-              + Mark as Received when credited &rarr;
-            </span>
+            <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold">
+              + Record Sai Payment
+            </Button>
           </Link>
         </div>
-      )}
+      ) : activePeriod.periodKey === '2026-09-C1' ? (
+        <div className="rounded-xl border border-emerald-300 bg-emerald-50/90 p-4 text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-3">
+            <CreditCard className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-emerald-900">
+                Cycle 1 (Sep 1 &ndash; Sep 15) Fully Received: ₹45,000 Total Collected
+              </p>
+              <p className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
+                Eshwar paid <strong>₹25,000</strong> (collected by Anurag) and Sai paid <strong>₹20,000</strong> (collected by Vivek). 
+                Anurag disbursed ₹10,000 to external dev. Net profit: ₹35,000 (₹17,500 each partner). Vivek owes Anurag ₹2,500.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* 3. Simple 3-Box Overview (Cash In, Costs Out, Net Cash in Hand) */}
       <div className="grid gap-4 sm:grid-cols-3">
@@ -175,7 +200,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             ₹{Number(summary.totalCollected).toLocaleString('en-IN')}
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            {saiPaid > 0 ? 'Eshwar (₹25k) & Sai (₹25k) received' : 'Eshwar 15-day payment (Credited in Anurag bank)'}
+            {activePeriod.periodKey === '2026-09-C1'
+              ? 'Eshwar (₹25k) & Sai (₹20k) collected'
+              : activePeriod.periodKey === '2026-09-C2'
+              ? 'Eshwar (₹25k) collected • Sai (₹30k) pending'
+              : 'Total client collections recorded'}
           </p>
         </Card>
 
@@ -338,11 +367,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-foreground text-sm">Eshwar</span>
                   <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                    Cycle 1 Paid
+                    {activePeriod.periodKey === '2026-09-C2' ? 'Cycle 2 Paid' : 'Cycle 1 Paid'}
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Monthly Rate: ₹50,000 &bull; <strong>15-Day Cycle: ₹25,000</strong>
+                  Contract: ₹50,000/month &bull; <strong>15-Day Cycle Rate: ₹25,000</strong>
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -357,31 +386,31 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-foreground text-sm">Sai</span>
-                  {saiPaid > 0 ? (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                      Cycle 1 Paid
+                  {activePeriod.periodKey === '2026-09-C2' ? (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                      Cycle 2 Pending (Rest Amount)
                     </span>
                   ) : (
-                    <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">
-                      Payment Not Arrived
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                      Cycle 1 Paid (₹20,000)
                     </span>
                   )}
                   <span className="text-[10px] text-muted-foreground">
-                    (Was ₹40k in Aug &rarr; ₹50k in Sep)
+                    (₹50k/month contract)
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Monthly Rate: ₹50,000 &bull; <strong>15-Day Cycle: ₹25,000</strong>
+                  Monthly: ₹50,000 &bull; <strong>{activePeriod.periodKey === '2026-09-C2' ? 'Cycle 2 Due: ₹30,000' : 'Cycle 1 Rate: ₹20,000'}</strong>
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                {saiPaid > 0 ? (
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
-                    +₹{saiPaid.toLocaleString('en-IN')} Received
+                {activePeriod.periodKey === '2026-09-C2' ? (
+                  <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md">
+                    ⏳ ₹30,000 Pending from Client
                   </span>
                 ) : (
-                  <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md">
-                    ₹25,000 Pending from Client
+                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+                    +₹20,000 Received (in Vivek Bank)
                   </span>
                 )}
               </div>

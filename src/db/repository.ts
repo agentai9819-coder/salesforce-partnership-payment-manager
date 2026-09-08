@@ -317,10 +317,25 @@ export class DatabaseRepository {
     let period = this.getBillingPeriodByKey(orgId, periodKey);
     if (period) return period;
 
-    const [year, month] = periodKey.split('-').map(Number);
-    const startDate = `${periodKey}-01`;
-    const lastDay = new Date(year, month, 0).getDate();
-    const endDate = `${periodKey}-${lastDay.toString().padStart(2, '0')}`;
+    let startDate: string;
+    let endDate: string;
+
+    if (periodKey.includes('-C1')) {
+      const baseKey = periodKey.replace('-C1', '');
+      startDate = `${baseKey}-01`;
+      endDate = `${baseKey}-15`;
+    } else if (periodKey.includes('-C2')) {
+      const baseKey = periodKey.replace('-C2', '');
+      const [year, month] = baseKey.split('-').map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
+      startDate = `${baseKey}-16`;
+      endDate = `${baseKey}-${lastDay.toString().padStart(2, '0')}`;
+    } else {
+      const [year, month] = periodKey.split('-').map(Number);
+      startDate = `${periodKey}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      endDate = `${periodKey}-${lastDay.toString().padStart(2, '0')}`;
+    }
 
     period = {
       id: `bp-${periodKey}`,
@@ -843,6 +858,8 @@ export class DatabaseRepository {
     const anuragId = '11111111-1111-1111-1111-111111111111';
     const vivekId = '22222222-2222-2222-2222-222222222222';
     const periodAugId = 'bp-2026-08';
+    const periodSepC1Id = 'bp-2026-09-C1';
+    const periodSepC2Id = 'bp-2026-09-C2';
     const periodSepId = 'bp-2026-09';
 
     return {
@@ -884,7 +901,7 @@ export class DatabaseRepository {
           organizationId: orgId,
           name: 'Sai',
           status: 'ACTIVE',
-          defaultNote: 'Payment every 15 days',
+          defaultNote: 'Payment every 15 days (₹50k/month contract)',
           createdAt: '2026-08-01T00:00:00Z',
           updatedAt: '2026-08-01T00:00:00Z',
         },
@@ -893,7 +910,7 @@ export class DatabaseRepository {
           organizationId: orgId,
           name: 'Eshwar',
           status: 'ACTIVE',
-          defaultNote: 'Remaining amount after resource is 50-50',
+          defaultNote: 'Remaining amount after resource is 50-50 (₹50k/month)',
           createdAt: '2026-08-01T00:00:00Z',
           updatedAt: '2026-08-01T00:00:00Z',
         },
@@ -929,6 +946,24 @@ export class DatabaseRepository {
           closedByPartnerId: anuragId,
         },
         {
+          id: periodSepC1Id,
+          organizationId: orgId,
+          periodKey: '2026-09-C1',
+          startDate: '2026-09-01',
+          endDate: '2026-09-15',
+          status: 'OPEN',
+          createdAt: '2026-09-01T00:00:00Z',
+        },
+        {
+          id: periodSepC2Id,
+          organizationId: orgId,
+          periodKey: '2026-09-C2',
+          startDate: '2026-09-16',
+          endDate: '2026-09-30',
+          status: 'OPEN',
+          createdAt: '2026-09-16T00:00:00Z',
+        },
+        {
           id: periodSepId,
           organizationId: orgId,
           periodKey: '2026-09',
@@ -939,6 +974,7 @@ export class DatabaseRepository {
         },
       ],
       clientBillingPlans: [
+        // August
         {
           id: 'cbp-sai-aug',
           clientId: 'client-sai',
@@ -950,12 +986,81 @@ export class DatabaseRepository {
           createdAt: '2026-08-01T00:00:00Z',
           updatedAt: '2026-08-01T00:00:00Z',
         },
+        // September Cycle 1 (Sep 1 - Sep 15)
+        {
+          id: 'cbp-eshwar-sep-c1',
+          clientId: 'client-eshwar',
+          billingPeriodId: periodSepC1Id,
+          grossBillingAmount: '25000.00',
+          notes: 'Cycle 1 (Sep 1-15) billing',
+          createdByPartnerId: anuragId,
+          updatedByPartnerId: anuragId,
+          createdAt: '2026-09-01T00:00:00Z',
+          updatedAt: '2026-09-01T00:00:00Z',
+        },
+        {
+          id: 'cbp-sai-sep-c1',
+          clientId: 'client-sai',
+          billingPeriodId: periodSepC1Id,
+          grossBillingAmount: '20000.00',
+          notes: 'Cycle 1 (Sep 1-15) billing',
+          createdByPartnerId: vivekId,
+          updatedByPartnerId: vivekId,
+          createdAt: '2026-09-01T00:00:00Z',
+          updatedAt: '2026-09-01T00:00:00Z',
+        },
+        // September Cycle 2 (Sep 16 - Sep 30)
+        {
+          id: 'cbp-eshwar-sep-c2',
+          clientId: 'client-eshwar',
+          billingPeriodId: periodSepC2Id,
+          grossBillingAmount: '25000.00',
+          notes: 'Cycle 2 (Sep 16-30) billing',
+          createdByPartnerId: anuragId,
+          updatedByPartnerId: anuragId,
+          createdAt: '2026-09-16T00:00:00Z',
+          updatedAt: '2026-09-16T00:00:00Z',
+        },
+        {
+          id: 'cbp-sai-sep-c2',
+          clientId: 'client-sai',
+          billingPeriodId: periodSepC2Id,
+          grossBillingAmount: '30000.00',
+          notes: 'Cycle 2 (Sep 16-30) rest amount (₹50,000 total - ₹20,000 paid = ₹30,000 pending)',
+          createdByPartnerId: vivekId,
+          updatedByPartnerId: vivekId,
+          createdAt: '2026-09-16T00:00:00Z',
+          updatedAt: '2026-09-16T00:00:00Z',
+        },
+        {
+          id: 'cbp-ganesh-sep-c2',
+          clientId: 'client-ganesh',
+          billingPeriodId: periodSepC2Id,
+          grossBillingAmount: '35000.00',
+          notes: 'Cycle 2 (Sep 16-30) unbilled pipeline',
+          createdByPartnerId: anuragId,
+          updatedByPartnerId: anuragId,
+          createdAt: '2026-09-16T00:00:00Z',
+          updatedAt: '2026-09-16T00:00:00Z',
+        },
+        {
+          id: 'cbp-rohit-sep-c2',
+          clientId: 'client-rohit',
+          billingPeriodId: periodSepC2Id,
+          grossBillingAmount: '55000.00',
+          notes: 'Cycle 2 (Sep 16-30) unbilled pipeline',
+          createdByPartnerId: anuragId,
+          updatedByPartnerId: anuragId,
+          createdAt: '2026-09-16T00:00:00Z',
+          updatedAt: '2026-09-16T00:00:00Z',
+        },
+        // September Full Month (Consolidated)
         {
           id: 'cbp-sai-sep',
           clientId: 'client-sai',
           billingPeriodId: periodSepId,
           grossBillingAmount: '50000.00',
-          notes: 'September contractual billing',
+          notes: 'September contractual billing (₹20k Cycle 1 + ₹30k Cycle 2)',
           createdByPartnerId: anuragId,
           updatedByPartnerId: anuragId,
           createdAt: '2026-09-01T00:00:00Z',
@@ -966,7 +1071,7 @@ export class DatabaseRepository {
           clientId: 'client-eshwar',
           billingPeriodId: periodSepId,
           grossBillingAmount: '50000.00',
-          notes: 'September billing total',
+          notes: 'September billing total (₹25k Cycle 1 + ₹25k Cycle 2)',
           createdByPartnerId: anuragId,
           updatedByPartnerId: anuragId,
           createdAt: '2026-09-01T00:00:00Z',
@@ -996,6 +1101,53 @@ export class DatabaseRepository {
         },
       ],
       clientPayments: [
+        // Cycle 1 Payments (Sep 1 - Sep 15)
+        {
+          id: 'pay-sep-eshwar-c1',
+          billingPlanId: 'cbp-eshwar-sep-c1',
+          collectedByPartnerId: anuragId,
+          paymentDate: '2026-09-01',
+          amountReceived: '25000.00',
+          paymentReference: 'ESHWAR-SEP-C1',
+          status: 'CONFIRMED',
+          notes: 'Sep 1-15 payment collected by Anurag',
+          idempotencyKey: 'idem-eshwar-sep-c1',
+          createdByPartnerId: anuragId,
+          createdAt: '2026-09-01T12:00:00Z',
+          updatedAt: '2026-09-01T12:00:00Z',
+        },
+        {
+          id: 'pay-sep-sai-c1',
+          billingPlanId: 'cbp-sai-sep-c1',
+          collectedByPartnerId: vivekId,
+          paymentDate: '2026-09-02',
+          amountReceived: '20000.00',
+          paymentReference: 'SAI-SEP-C1',
+          status: 'CONFIRMED',
+          notes: 'Sep 1-15 payment collected by Vivek',
+          idempotencyKey: 'idem-sai-sep-c1',
+          createdByPartnerId: vivekId,
+          createdAt: '2026-09-02T10:00:00Z',
+          updatedAt: '2026-09-02T10:00:00Z',
+        },
+        // Cycle 2 Payments (Sep 16 - Sep 30)
+        {
+          id: 'pay-sep-eshwar-c2',
+          billingPlanId: 'cbp-eshwar-sep-c2',
+          collectedByPartnerId: anuragId,
+          paymentDate: '2026-09-16',
+          amountReceived: '25000.00',
+          paymentReference: 'ESHWAR-SEP-C2',
+          status: 'CONFIRMED',
+          notes: 'Sep 16-30 payment collected by Anurag',
+          idempotencyKey: 'idem-eshwar-sep-c2',
+          createdByPartnerId: anuragId,
+          createdAt: '2026-09-16T12:00:00Z',
+          updatedAt: '2026-09-16T12:00:00Z',
+        },
+        // Note: Sai Cycle 2 payment is PENDING (₹30,000 remaining) - no confirmed payment entry
+
+        // Consolidated September Payments
         {
           id: 'pay-sep-eshwar',
           billingPlanId: 'cbp-eshwar-sep',
@@ -1004,21 +1156,35 @@ export class DatabaseRepository {
           amountReceived: '25000.00',
           paymentReference: 'LAST-15-DAYS-ESHWAR',
           status: 'CONFIRMED',
-          notes: 'Last 15 days payment collected by Anurag',
+          notes: 'Sep 1-15 cycle payment collected by Anurag',
           idempotencyKey: 'idem-eshwar-sep-01',
           createdByPartnerId: anuragId,
           createdAt: '2026-09-01T12:00:00Z',
           updatedAt: '2026-09-01T12:00:00Z',
         },
         {
+          id: 'pay-sep-eshwar-part2',
+          billingPlanId: 'cbp-eshwar-sep',
+          collectedByPartnerId: anuragId,
+          paymentDate: '2026-09-16',
+          amountReceived: '25000.00',
+          paymentReference: 'ESHWAR-SEP-PART2',
+          status: 'CONFIRMED',
+          notes: 'Sep 16-30 cycle payment collected by Anurag',
+          idempotencyKey: 'idem-eshwar-sep-02',
+          createdByPartnerId: anuragId,
+          createdAt: '2026-09-16T12:00:00Z',
+          updatedAt: '2026-09-16T12:00:00Z',
+        },
+        {
           id: 'pay-sep-sai',
           billingPlanId: 'cbp-sai-sep',
           collectedByPartnerId: vivekId,
           paymentDate: '2026-09-02',
-          amountReceived: '25000.00',
+          amountReceived: '20000.00',
           paymentReference: 'SAI-1-15-SEP',
           status: 'CONFIRMED',
-          notes: 'September 1-15 payment received',
+          notes: 'September 1-15 payment received by Vivek (₹30,000 pending for Cycle 2)',
           idempotencyKey: 'idem-sai-sep-01',
           createdByPartnerId: vivekId,
           createdAt: '2026-09-02T10:00:00Z',
@@ -1056,11 +1222,27 @@ export class DatabaseRepository {
       ],
       externalObligations: [
         {
+          id: 'eo-eshwar-c1',
+          billingPlanId: 'cbp-eshwar-sep-c1',
+          externalPartyId: 'ep-eshwar-dev',
+          expectedAmount: '10000.00',
+          notes: 'Contractual resource cost (Cycle 1)',
+          createdAt: '2026-09-01T00:00:00Z',
+        },
+        {
+          id: 'eo-eshwar-c2',
+          billingPlanId: 'cbp-eshwar-sep-c2',
+          externalPartyId: 'ep-eshwar-dev',
+          expectedAmount: '10000.00',
+          notes: 'Contractual resource cost (Cycle 2)',
+          createdAt: '2026-09-16T00:00:00Z',
+        },
+        {
           id: 'eo-eshwar',
           billingPlanId: 'cbp-eshwar-sep',
           externalPartyId: 'ep-eshwar-dev',
           expectedAmount: '20000.00',
-          notes: 'Contractual resource cost',
+          notes: 'Contractual resource cost (Full month)',
           createdAt: '2026-09-01T00:00:00Z',
         },
         {
@@ -1081,6 +1263,37 @@ export class DatabaseRepository {
         },
       ],
       externalDisbursements: [
+        // Cycle 1 (Sep 1 - Sep 15)
+        {
+          id: 'ed-eshwar-resource-c1',
+          obligationId: 'eo-eshwar-c1',
+          billingPeriodId: periodSepC1Id,
+          externalPartyId: 'ep-eshwar-dev',
+          disbursedByPartnerId: anuragId,
+          amountPaid: '10000.00',
+          disbursementDate: '2026-09-01',
+          status: 'CONFIRMED',
+          notes: '₹10,000 disbursed to resource by Anurag out of collected funds (Cycle 1)',
+          createdByPartnerId: anuragId,
+          createdAt: '2026-09-01T12:30:00Z',
+          updatedAt: '2026-09-01T12:30:00Z',
+        },
+        // Cycle 2 (Sep 16 - Sep 30)
+        {
+          id: 'ed-eshwar-resource-c2',
+          obligationId: 'eo-eshwar-c2',
+          billingPeriodId: periodSepC2Id,
+          externalPartyId: 'ep-eshwar-dev',
+          disbursedByPartnerId: anuragId,
+          amountPaid: '10000.00',
+          disbursementDate: '2026-09-16',
+          status: 'CONFIRMED',
+          notes: '₹10,000 disbursed to resource by Anurag out of collected funds (Cycle 2)',
+          createdByPartnerId: anuragId,
+          createdAt: '2026-09-16T12:30:00Z',
+          updatedAt: '2026-09-16T12:30:00Z',
+        },
+        // Consolidated Full Month
         {
           id: 'ed-eshwar-resource-01',
           obligationId: 'eo-eshwar',
@@ -1106,7 +1319,7 @@ export class DatabaseRepository {
           entityName: 'system',
           entityId: orgId,
           action: 'INSERT',
-          newData: { description: 'Initialized production partnership ledger with baseline records' },
+          newData: { description: 'Initialized production partnership ledger with 15-day cycle records' },
           changeReason: 'System initialization',
           createdAt: '2026-09-01T00:00:00Z',
         },

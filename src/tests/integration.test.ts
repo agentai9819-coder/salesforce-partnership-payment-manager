@@ -11,36 +11,66 @@ describe('Multi-User End-to-End Business Workflows & September Baseline Verifica
     db.resetToSeed();
   });
 
-  it('MUST independently derive the exact September 2026 figures from database records', () => {
-    const period = db.getBillingPeriodByKey(orgId, '2026-09')!;
-    const billingPlans = db.getBillingPlans(period.id);
-    const payments = db.getPaymentsForPeriod(period.id);
-    const disbursements = db.getExternalDisbursements(period.id);
-    const adjustments = db.getBusinessAdjustments(period.id);
+  it('MUST independently derive the exact September 2026 15-day cycle figures from database records', () => {
+    // --- Test Cycle 1: Sep 1 - Sep 15 (Eshwar paid ₹25k, Sai paid ₹20k, Dev paid ₹10k) ---
+    const periodC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
+    expect(periodC1).toBeDefined();
+    const plansC1 = db.getBillingPlans(periodC1.id);
+    const paymentsC1 = db.getPaymentsForPeriod(periodC1.id);
+    const disbursementsC1 = db.getExternalDisbursements(periodC1.id);
+    const adjustmentsC1 = db.getBusinessAdjustments(periodC1.id);
 
-    const summary = calculateMonthlySettlement({
-      periodKey: period.periodKey,
+    const summaryC1 = calculateMonthlySettlement({
+      periodKey: periodC1.periodKey,
       anuragPartnerId: anuragId,
       vivekPartnerId: vivekId,
-      billingPlans,
-      payments,
-      disbursements,
-      adjustments,
+      billingPlans: plansC1,
+      payments: paymentsC1,
+      disbursements: disbursementsC1,
+      adjustments: adjustmentsC1,
     });
 
-    // Verification of September figures: Eshwar paid ₹25k to Anurag, Sai paid ₹25k to Vivek, Dev paid ₹10k by Anurag
-    expect(summary.totalCollected).toBe('50000.00');
-    expect(summary.totalExternalDisbursed).toBe('10000.00');
-    expect(summary.netPartnershipIncome).toBe('40000.00');
-    expect(summary.anuragEntitlement).toBe('20000.00');
-    expect(summary.vivekEntitlement).toBe('20000.00');
-    expect(summary.anuragLiquidCashHeld).toBe('15000.00'); // ₹25,000 collected - ₹10,000 paid to dev
-    expect(summary.vivekLiquidCashHeld).toBe('25000.00'); // ₹25,000 collected by Vivek from Sai
-    expect(summary.operationalBalancingTransfer).toBe('5000.00');
-    expect(summary.operationalBalancingDirection).toBe('VIVEK_OWES_ANURAG');
-    expect(summary.businessAdjustmentsTotal).toBe('0.00');
-    expect(summary.finalSettlementAmount).toBe('5000.00');
-    expect(summary.finalSettlementDirection).toBe('VIVEK_PAYS_ANURAG');
+    expect(summaryC1.totalCollected).toBe('45000.00'); // ₹25,000 (Eshwar) + ₹20,000 (Sai)
+    expect(summaryC1.totalExternalDisbursed).toBe('10000.00'); // ₹10,000 paid to dev by Anurag
+    expect(summaryC1.netPartnershipIncome).toBe('35000.00');
+    expect(summaryC1.anuragEntitlement).toBe('17500.00');
+    expect(summaryC1.vivekEntitlement).toBe('17500.00');
+    expect(summaryC1.anuragLiquidCashHeld).toBe('15000.00'); // ₹25,000 - ₹10,000
+    expect(summaryC1.vivekLiquidCashHeld).toBe('20000.00'); // ₹20,000 collected from Sai
+    expect(summaryC1.operationalBalancingTransfer).toBe('2500.00');
+    expect(summaryC1.operationalBalancingDirection).toBe('VIVEK_OWES_ANURAG');
+    expect(summaryC1.finalSettlementAmount).toBe('2500.00');
+    expect(summaryC1.finalSettlementDirection).toBe('VIVEK_PAYS_ANURAG');
+
+    // --- Test Cycle 2: Sep 16 - Sep 30 (Eshwar paid ₹25k, Sai ₹30k is PENDING, Dev paid ₹10k) ---
+    const periodC2 = db.getBillingPeriodByKey(orgId, '2026-09-C2')!;
+    expect(periodC2).toBeDefined();
+    const plansC2 = db.getBillingPlans(periodC2.id);
+    const paymentsC2 = db.getPaymentsForPeriod(periodC2.id);
+    const disbursementsC2 = db.getExternalDisbursements(periodC2.id);
+    const adjustmentsC2 = db.getBusinessAdjustments(periodC2.id);
+
+    const summaryC2 = calculateMonthlySettlement({
+      periodKey: periodC2.periodKey,
+      anuragPartnerId: anuragId,
+      vivekPartnerId: vivekId,
+      billingPlans: plansC2,
+      payments: paymentsC2,
+      disbursements: disbursementsC2,
+      adjustments: adjustmentsC2,
+    });
+
+    expect(summaryC2.totalCollected).toBe('25000.00'); // Only Eshwar paid ₹25,000, Sai is pending
+    expect(summaryC2.totalExternalDisbursed).toBe('10000.00'); // ₹10,000 paid to dev by Anurag
+    expect(summaryC2.netPartnershipIncome).toBe('15000.00');
+    expect(summaryC2.anuragEntitlement).toBe('7500.00');
+    expect(summaryC2.vivekEntitlement).toBe('7500.00');
+    expect(summaryC2.anuragLiquidCashHeld).toBe('15000.00'); // ₹25,000 - ₹10,000
+    expect(summaryC2.vivekLiquidCashHeld).toBe('0.00'); // Sai payment pending
+    expect(summaryC2.operationalBalancingTransfer).toBe('7500.00');
+    expect(summaryC2.operationalBalancingDirection).toBe('ANURAG_OWES_VIVEK');
+    expect(summaryC2.finalSettlementAmount).toBe('7500.00');
+    expect(summaryC2.finalSettlementDirection).toBe('ANURAG_PAYS_VIVEK');
   });
 
   it('should support full collaborative lifecycle across Anurag and Vivek with shared state', () => {
@@ -135,7 +165,7 @@ describe('Multi-User End-to-End Business Workflows & September Baseline Verifica
   });
 
   it('should exclude voided payments from cash held and settlement', () => {
-    const period = db.getBillingPeriodByKey(orgId, '2026-09')!;
+    const period = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
     const initialPayments = db.getPaymentsForPeriod(period.id);
     const eshwarPayment = initialPayments.find((p) => p.amountReceived === '25000.00')!;
 
@@ -152,9 +182,9 @@ describe('Multi-User End-to-End Business Workflows & September Baseline Verifica
       adjustments: db.getBusinessAdjustments(period.id),
     });
 
-    // Eshwar is voided, Sai remains confirmed (₹25,000)
-    expect(updatedSummary.totalCollected).toBe('25000.00');
+    // Eshwar is voided, Sai remains confirmed (₹20,000)
+    expect(updatedSummary.totalCollected).toBe('20000.00');
     expect(updatedSummary.anuragLiquidCashHeld).toBe('-10000.00'); // Anurag: 0 collected - 10,000 disbursed
-    expect(updatedSummary.vivekLiquidCashHeld).toBe('25000.00'); // Vivek: 25,000 from Sai
+    expect(updatedSummary.vivekLiquidCashHeld).toBe('20000.00'); // Vivek: 20,000 from Sai
   });
 });
