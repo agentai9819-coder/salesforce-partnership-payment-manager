@@ -80,9 +80,10 @@ export function PaymentModal({
                   <option value="" disabled selected>Select client contract plan...</option>
                   {billingPlans.map((bp) => {
                     const client = clients.find((c) => c.id === bp.clientId);
+                    const cycleKey = bp.billingPeriodId.replace('bp-', '');
                     return (
                       <option key={bp.id} value={bp.id}>
-                        {client ? client.name : bp.clientId} (Plan: ₹{Number(bp.grossBillingAmount).toLocaleString('en-IN')})
+                        {client ? client.name : bp.clientId} &mdash; Cycle: {cycleKey} (Expected: ₹{Number(bp.grossBillingAmount).toLocaleString('en-IN')})
                       </option>
                     );
                   })}

@@ -103,12 +103,15 @@ export default async function ExpensesPage({ searchParams }: ExpensesPageProps) 
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-border bg-muted/40 text-muted-foreground">
                   <tr>
-                    <th className="p-3">Date</th>
-                    <th className="p-3">External Party</th>
-                    <th className="p-3">Amount Paid</th>
-                    <th className="p-3">Paid By Partner</th>
+                    <th className="p-3 font-bold text-foreground">Client / Project</th>
+                    <th className="p-3 font-bold text-foreground">Resource / External Party</th>
+                    <th className="p-3">Expected Cost</th>
+                    <th className="p-3 font-bold text-danger">Actual Paid</th>
+                    <th className="p-3">Payment Date</th>
+                    <th className="p-3">Accounting Cycle</th>
+                    <th className="p-3">Paid By</th>
+                    <th className="p-3">Notes / Ref</th>
                     <th className="p-3">Status</th>
-                    <th className="p-3">Notes</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -116,7 +119,13 @@ export default async function ExpensesPage({ searchParams }: ExpensesPageProps) 
                   {disbursements.map((d) => {
                     const party = externalParties.find((ep) => ep.id === d.externalPartyId);
                     const disburser = partners.find((pt) => pt.id === d.disbursedByPartnerId);
+                    const obligation = obligations.find((o) => o.id === d.obligationId);
                     const isVoided = d.status === 'VOIDED';
+
+                    // Client lookup
+                    let clientName = 'Eshwar';
+                    if (party?.name.toLowerCase().includes('mokika')) clientName = 'Ganesh';
+                    if (party?.name.toLowerCase().includes('broker')) clientName = 'Rohit';
 
                     return (
                       <tr
@@ -125,12 +134,21 @@ export default async function ExpensesPage({ searchParams }: ExpensesPageProps) 
                           isVoided ? 'opacity-50 line-through bg-muted/10' : ''
                         }`}
                       >
-                        <td className="p-3 text-muted-foreground">{d.disbursementDate}</td>
-                        <td className="p-3 font-bold text-foreground">
-                          {party?.name || 'Party'} ({party?.partyType})
+                        <td className="p-3 font-bold text-foreground">{clientName}</td>
+                        <td className="p-3 font-semibold text-foreground">
+                          {party?.name || 'Party'} <span className="text-[10px] text-muted-foreground">({party?.partyType})</span>
                         </td>
-                        <td className="p-3 font-extrabold text-danger">
+                        <td className="p-3 text-muted-foreground">
+                          ₹{obligation ? Number(obligation.expectedAmount).toLocaleString('en-IN') : Number(d.amountPaid).toLocaleString('en-IN')}
+                        </td>
+                        <td className="p-3 font-black text-danger">
                           ₹{Number(d.amountPaid).toLocaleString('en-IN')}
+                        </td>
+                        <td className="p-3 text-foreground font-medium">{d.disbursementDate}</td>
+                        <td className="p-3">
+                          <span className="rounded bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground">
+                            {activePeriod.periodKey}
+                          </span>
                         </td>
                         <td className="p-3">
                           <span
@@ -143,6 +161,7 @@ export default async function ExpensesPage({ searchParams }: ExpensesPageProps) 
                             {disburser?.fullName || d.disbursedByPartnerId}
                           </span>
                         </td>
+                        <td className="p-3 text-muted-foreground">{d.notes || '—'}</td>
                         <td className="p-3">
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -154,7 +173,6 @@ export default async function ExpensesPage({ searchParams }: ExpensesPageProps) 
                             {d.status}
                           </span>
                         </td>
-                        <td className="p-3 text-muted-foreground">{d.notes || '—'}</td>
                         <td className="p-3 text-right">
                           {!isClosed && !isVoided && (
                             <VoidModal

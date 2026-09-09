@@ -19,13 +19,10 @@ import {
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/clients', label: 'Clients', icon: Users },
-  { href: '/billing', label: 'Billing Plans', icon: Receipt },
-  { href: '/payments', label: 'Client Payments', icon: CreditCard },
-  { href: '/expenses', label: 'External Costs', icon: Briefcase },
+  { href: '/billing', label: 'Billing', icon: Receipt },
+  { href: '/payments', label: 'Payments', icon: CreditCard },
+  { href: '/expenses', label: 'Expenses', icon: Briefcase },
   { href: '/settlements', label: 'Settlements', icon: Scale },
-  { href: '/admin', label: 'Admin Tables', icon: Database },
-  { href: '/audit', label: 'Audit Trail', icon: History },
-  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function AppNavigation() {

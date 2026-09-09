@@ -30,13 +30,21 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     .filter((p) => p.status === 'CONFIRMED')
     .reduce((sum, p) => sum + Number(p.amountReceived), 0);
 
+  // Gather billing plans from active period plus any open periods for late cycle payments
+  const openPeriods = periods.filter((p) => p.status === 'OPEN');
+  const openPlanIds = new Set<string>();
+  const selectablePlans = db.getAllData().clientBillingPlans.filter((p) => {
+    const period = db.getBillingPeriodById(p.billingPeriodId);
+    return period && period.status === 'OPEN';
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-black text-foreground">Client Payment Collections</h2>
+          <h2 className="text-2xl font-black text-foreground">Actual Client Payments</h2>
           <p className="text-xs text-muted-foreground">
-            Authoritative cash inflows with explicit partner collector attribution.
+            Authoritative cash inflows credited strictly to the partner who physically received the funds.
           </p>
         </div>
 
@@ -59,14 +67,12 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
             </Button>
           </form>
 
-          {!isClosed && (
-            <PaymentModal
-              billingPlans={billingPlans}
-              clients={clients}
-              partners={partners}
-              activePartnerId={partner.id}
-            />
-          )}
+          <PaymentModal
+            billingPlans={selectablePlans}
+            clients={clients}
+            partners={partners}
+            activePartnerId={partner.id}
+          />
         </div>
       </div>
 
@@ -74,7 +80,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
         <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
           <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
           <div>
-            <strong>Accounting Period is CLOSED:</strong> Adding or voiding payment entries is disabled for {activePeriod.periodKey}.
+            <strong>Accounting Period is CLOSED:</strong> Adding or voiding payment entries directly for {activePeriod.periodKey} is restricted.
           </div>
         </div>
       )}
@@ -87,7 +93,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                 <CreditCard className="h-4 w-4 text-accent" /> Collections Ledger: {activePeriod.periodKey}
               </CardTitle>
               <CardDescription>
-                Payments actually deposited into bank accounts. Total confirmed: ₹{totalReceived.toLocaleString('en-IN')}
+                Confirmed cash deposited in partner accounts. Total confirmed: ₹{totalReceived.toLocaleString('en-IN')}
               </CardDescription>
             </div>
           </div>
@@ -102,19 +108,21 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-border bg-muted/40 text-muted-foreground">
                   <tr>
-                    <th className="p-3">Date</th>
-                    <th className="p-3">Client</th>
-                    <th className="p-3">Amount Received</th>
+                    <th className="p-3 font-bold text-foreground">Client</th>
+                    <th className="p-3 font-bold text-foreground">Amount</th>
+                    <th className="p-3">Receipt Date</th>
+                    <th className="p-3">Accounting Cycle</th>
                     <th className="p-3">Collected By</th>
                     <th className="p-3">Reference</th>
-                    <th className="p-3">Status</th>
                     <th className="p-3">Notes</th>
+                    <th className="p-3">Status</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {payments.map((p) => {
-                    const plan = billingPlans.find((bp) => bp.id === p.billingPlanId);
+                    const plan = db.getAllData().clientBillingPlans.find((bp) => bp.id === p.billingPlanId);
+                    const planPeriod = plan ? db.getBillingPeriodById(plan.billingPeriodId) : undefined;
                     const client = plan ? clients.find((c) => c.id === plan.clientId) : undefined;
                     const collector = partners.find((pt) => pt.id === p.collectedByPartnerId);
                     const isVoided = p.status === 'VOIDED';
@@ -126,10 +134,15 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                           isVoided ? 'opacity-50 line-through bg-muted/10' : ''
                         }`}
                       >
-                        <td className="p-3 text-muted-foreground">{p.paymentDate}</td>
-                        <td className="p-3 font-bold text-foreground">{client?.name || 'Client'}</td>
-                        <td className="p-3 font-extrabold text-foreground">
+                        <td className="p-3 font-extrabold text-foreground">{client?.name || 'Client'}</td>
+                        <td className="p-3 font-black text-emerald-600">
                           ₹{Number(p.amountReceived).toLocaleString('en-IN')}
+                        </td>
+                        <td className="p-3 text-foreground font-medium">{p.paymentDate}</td>
+                        <td className="p-3">
+                          <span className="rounded bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground">
+                            {planPeriod?.periodKey || activePeriod.periodKey}
+                          </span>
                         </td>
                         <td className="p-3">
                           <span
@@ -145,6 +158,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                         <td className="p-3 font-mono text-[11px] text-muted-foreground">
                           {p.paymentReference || '—'}
                         </td>
+                        <td className="p-3 text-muted-foreground">{p.notes || '—'}</td>
                         <td className="p-3">
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -156,7 +170,6 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                             {p.status}
                           </span>
                         </td>
-                        <td className="p-3 text-muted-foreground">{p.notes || '—'}</td>
                         <td className="p-3 text-right">
                           {!isClosed && !isVoided && (
                             <VoidModal
