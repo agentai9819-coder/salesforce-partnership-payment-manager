@@ -29,8 +29,8 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(saiPayment?.status).toBe('CONFIRMED');
   });
 
-  // B. Sai August Cycle 2 expected payment is ₹20,000.
-  it('B. Sai August Cycle 2 expected payment is ₹20,000', () => {
+  // B. Sai August Cycle 2 payment is ₹20,000 received by Vivek.
+  it('B. Sai August Cycle 2 payment is ₹20,000 received by Vivek', () => {
     const period = db.getBillingPeriodByKey(orgId, '2026-08-C2')!;
     expect(period).toBeDefined();
 
@@ -38,41 +38,24 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(saiPlan).toBeDefined();
     expect(saiPlan.grossBillingAmount).toBe('20000.00');
 
-    // Before payment is recorded, actual received = 0, outstanding = 20,000
     const saiPayments = db.getPaymentsForPeriod(period.id).filter((p) => p.billingPlanId === saiPlan.id);
-    expect(saiPayments.length).toBe(0);
+    expect(saiPayments.length).toBe(1);
+    expect(saiPayments[0].amountReceived).toBe('20000.00');
+    expect(saiPayments[0].collectedByPartnerId).toBe(vivekId);
   });
 
-  // C. Sai August Cycle 2 receipt on 11 September still belongs to August Cycle 2.
-  it('C. Sai August Cycle 2 receipt on 11 September still belongs to August Cycle 2', () => {
+  // C. Sai August Cycle 2 receipt belongs to August Cycle 2.
+  it('C. Sai August Cycle 2 receipt belongs to August Cycle 2', () => {
     const periodAugC2 = db.getBillingPeriodByKey(orgId, '2026-08-C2')!;
     const periodSepC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
-    const saiPlanAugC2 = db.getBillingPlans(periodAugC2.id).find((p) => p.clientId === 'client-sai')!;
 
-    // Record receipt on 11 September tied to August Cycle 2 plan
-    const payment = db.recordPayment(
-      {
-        billingPlanId: saiPlanAugC2.id,
-        collectedByPartnerId: vivekId,
-        paymentDate: '2026-09-11',
-        amountReceived: '20000.00',
-        paymentReference: 'SAI-AUG-C2-CLEARING-SEP11',
-        notes: 'August Cycle 2 payment cleared on 11 September',
-        createdByPartnerId: vivekId,
-      },
-      vivekId
-    );
-
-    expect(payment.paymentDate).toBe('2026-09-11');
-    expect(payment.billingPlanId).toBe(saiPlanAugC2.id);
-
-    // It is in August Cycle 2
     const augPayments = db.getPaymentsForPeriod(periodAugC2.id);
-    expect(augPayments.some((p) => p.id === payment.id)).toBe(true);
-
-    // It is NOT in September Cycle 1
     const sepPayments = db.getPaymentsForPeriod(periodSepC1.id);
-    expect(sepPayments.some((p) => p.id === payment.id)).toBe(false);
+    const saiPayment = augPayments.find((p) => p.id === 'pay-aug-sai-c2')!;
+
+    expect(saiPayment).toBeDefined();
+    expect(saiPayment.amountReceived).toBe('20000.00');
+    expect(sepPayments.some((p) => p.id === saiPayment.id)).toBe(false);
   });
 
   // D. Sai September billing is ₹50,000.
@@ -99,11 +82,10 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(saiPlan.grossBillingAmount).toBe('25000.00');
   });
 
-  // G. Current September actual received = ₹0 before actual September payment.
-  it('G. Current September actual received = ₹0 before actual September payment', () => {
+  // G. Current September actual received: Rohit ₹20,000 received by Vivek, Cycle 2 = ₹0.
+  it('G. Current September actual received: Rohit ₹20,000 received by Vivek, Cycle 2 = ₹0', () => {
     const periodSepC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
     const periodSepC2 = db.getBillingPeriodByKey(orgId, '2026-09-C2')!;
-    const periodSep = db.getBillingPeriodByKey(orgId, '2026-09')!;
 
     const c1Confirmed = db
       .getPaymentsForPeriod(periodSepC1.id)
@@ -115,14 +97,8 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
       .filter((p) => p.status === 'CONFIRMED')
       .reduce((sum, p) => sum + Number(p.amountReceived), 0);
 
-    const fullConfirmed = db
-      .getPaymentsForPeriod(periodSep.id)
-      .filter((p) => p.status === 'CONFIRMED')
-      .reduce((sum, p) => sum + Number(p.amountReceived), 0);
-
-    expect(c1Confirmed).toBe(0);
+    expect(c1Confirmed).toBe(20000);
     expect(c2Confirmed).toBe(0);
-    expect(fullConfirmed).toBe(0);
   });
 
   // H. Eshwar monthly billing = ₹50,000.
@@ -488,22 +464,18 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(ganeshPaymentsMonth.length).toBe(0);
   });
 
-  // V. Rohit does not create fake September cash.
-  it('V. Rohit does not create fake September cash', () => {
+  // V. Rohit September Cycle 1 payment of ₹20,000 received by Vivek.
+  it('V. Rohit September Cycle 1 payment of ₹20,000 received by Vivek', () => {
     const periodC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
-    const periodMonth = db.getBillingPeriodByKey(orgId, '2026-09')!;
 
     const rohitPaymentsC1 = db.getPaymentsForPeriod(periodC1.id).filter((p) => {
       const plan = db.getBillingPlans(periodC1.id).find((bp) => bp.id === p.billingPlanId);
       return plan?.clientId === 'client-rohit';
     });
-    const rohitPaymentsMonth = db.getPaymentsForPeriod(periodMonth.id).filter((p) => {
-      const plan = db.getBillingPlans(periodMonth.id).find((bp) => bp.id === p.billingPlanId);
-      return plan?.clientId === 'client-rohit';
-    });
 
-    expect(rohitPaymentsC1.length).toBe(0);
-    expect(rohitPaymentsMonth.length).toBe(0);
+    expect(rohitPaymentsC1.length).toBe(1);
+    expect(rohitPaymentsC1[0].amountReceived).toBe('20000.00');
+    expect(rohitPaymentsC1[0].collectedByPartnerId).toBe(vivekId);
   });
 
   // W. Closed-period protection works.

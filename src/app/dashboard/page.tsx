@@ -171,20 +171,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </div>
           </div>
         </CardHeader>
-
-        {isSeptember && (
-          <CardContent className="pt-3 pb-3">
-            <div className="rounded-lg bg-blue-50/80 border border-blue-200 p-3 text-xs text-blue-900 flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-blue-700 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold">₹20,000 August Cycle 2 payment expected on 11 Sep</p>
-                <p className="text-[11px] text-blue-700 mt-0.5">
-                  This is an August receivable, not September revenue. It will credit cash to August Cycle 2 when recorded.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        )}
       </Card>
 
       {/* 2. BILLING */}
