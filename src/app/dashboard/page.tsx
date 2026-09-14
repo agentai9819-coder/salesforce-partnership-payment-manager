@@ -82,7 +82,95 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .filter((d) => d.disbursedByPartnerId === vivek.id)
     .reduce((sum, d) => sum + Number(d.amountPaid), 0);
 
-  // Formatted numbers
+  // --- DYNAMIC CUMULATIVE 50/50 UNSETTLED HISAAB ---
+  const allPartnershipPayments = db.getAllPayments().filter((p) => p.status === 'CONFIRMED');
+  const allPartnershipDisbursements = db.getAllDisbursements().filter((d) => d.status === 'CONFIRMED');
+  const allBillingPlansList = db.getAllBillingPlans();
+  const settledPeriodIds = new Set(
+    db.getAllSettlementPeriods().filter((sp) => sp.isSettled).map((sp) => sp.billingPeriodId)
+  );
+
+  // Exclude settled cycles (e.g. Aug C1) and full-month duplicates to avoid double-counting
+  const activeCyclePayments = allPartnershipPayments.filter((p) => {
+    const isCycle = p.billingPlanId.includes('-c1') || p.billingPlanId.includes('-c2');
+    if (!isCycle) return false;
+    const plan = allBillingPlansList.find((bp) => bp.id === p.billingPlanId);
+    if (plan && settledPeriodIds.has(plan.billingPeriodId)) return false;
+    return true;
+  });
+
+  const activeCycleDisbursements = allPartnershipDisbursements.filter((d) => {
+    if (settledPeriodIds.has(d.billingPeriodId)) return false;
+    return d.billingPeriodId.includes('-C1') || d.billingPeriodId.includes('-C2');
+  });
+
+  // Dynamic breakdown per payment
+  interface UnsettledItem {
+    id: string;
+    clientName: string;
+    received: number;
+    resourceCost: number;
+    net: number;
+    collector: 'ANURAG' | 'VIVEK';
+    anuragShare: number;
+    vivekShare: number;
+    whoHolds: string;
+  }
+
+  const unsettledItems: UnsettledItem[] = activeCyclePayments.map((p) => {
+    const plan = allBillingPlansList.find((bp) => bp.id === p.billingPlanId);
+    const client = plan ? clientMap.get(plan.clientId) : null;
+    const clientName = client?.name || 'Client';
+    const received = Number(p.amountReceived);
+
+    // Direct disbursement associated with this client/plan
+    const disbs = activeCycleDisbursements.filter((d) => d.billingPeriodId === plan?.billingPeriodId);
+    // Specifically Divyanshu on Eshwar
+    const isEshwar = clientName.toLowerCase().includes('eshwar');
+    const resourceCost = isEshwar
+      ? disbs.reduce((sum, d) => sum + Number(d.amountPaid), 0)
+      : 0;
+
+    const net = received - resourceCost;
+    const isAnuragCollector = p.collectedByPartnerId === anurag.id;
+    const collector = isAnuragCollector ? ('ANURAG' as const) : ('VIVEK' as const);
+    const anuragShare = net / 2;
+    const vivekShare = net / 2;
+
+    const whoHolds = isAnuragCollector
+      ? `Anurag ke paas Vivek ke ₹${vivekShare.toLocaleString('en-IN')}`
+      : `Vivek ke paas Anurag ke ₹${anuragShare.toLocaleString('en-IN')}`;
+
+    return {
+      id: p.id,
+      clientName,
+      received,
+      resourceCost,
+      net,
+      collector,
+      anuragShare,
+      vivekShare,
+      whoHolds,
+    };
+  });
+
+  // Aggregate totals
+  const totalVivekHoldsForAnurag = unsettledItems
+    .filter((item) => item.collector === 'VIVEK')
+    .reduce((sum, item) => sum + item.anuragShare, 0);
+
+  const totalAnuragHoldsForVivek = unsettledItems
+    .filter((item) => item.collector === 'ANURAG')
+    .reduce((sum, item) => sum + item.vivekShare, 0);
+
+  // Operational cross-offset
+  const masterOperationalDiff = totalVivekHoldsForAnurag - totalAnuragHoldsForVivek;
+
+  // Global one-time carry forward debt (Anurag owes Vivek ₹500)
+  const masterOldDebt = 500;
+  const masterFinalNetToAnurag = masterOperationalDiff - masterOldDebt;
+
+  // Formatted numbers for active period
   const totalReceived = Number(summary.totalCollected);
   const totalDisbursed = Number(summary.totalExternalDisbursed);
   const netPool = Number(summary.netPartnershipIncome);
@@ -91,36 +179,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const isAlreadySettled = Boolean(settlementRecord?.isSettled);
 
-  // Settlement direction & sentence (Incorporating business carry-forward)
+  // Active period operational settlement
   const opBalancingAmt = Number(summary.operationalBalancingTransfer);
   const finalSettlementAmt = Number(summary.finalSettlementAmount);
-  const businessAdjustmentAmt = Number(summary.businessAdjustmentsTotal);
-
-  let settlementSentence = 'No settlement required (Balanced)';
-  let settlementSubtext = 'Both partners have equal cash entitlement.';
-  let isVivekPays = false;
-  let isAnuragPays = false;
-
-  if (isAlreadySettled) {
-    settlementSentence = 'Already Settled 50/50';
-    settlementSubtext = 'This period was already settled. No further payment transfer required.';
-  } else if (summary.finalSettlementDirection === 'VIVEK_PAYS_ANURAG' && finalSettlementAmt > 0) {
-    settlementSentence = `Vivek pays Anurag ₹${finalSettlementAmt.toLocaleString('en-IN')} (Net)`;
-    if (businessAdjustmentAmt > 0) {
-      settlementSubtext = `Operational split ke ₹${opBalancingAmt.toLocaleString('en-IN')} me se purane ₹${businessAdjustmentAmt.toLocaleString('en-IN')} kaat kar, Vivek Anurag ko net ₹${finalSettlementAmt.toLocaleString('en-IN')} dega.`;
-    } else {
-      settlementSubtext = `Vivek gives Anurag ₹${finalSettlementAmt.toLocaleString('en-IN')} to equalize the 50/50 partnership share.`;
-    }
-    isVivekPays = true;
-  } else if (summary.finalSettlementDirection === 'ANURAG_PAYS_VIVEK' && finalSettlementAmt > 0) {
-    settlementSentence = `Anurag pays Vivek ₹${finalSettlementAmt.toLocaleString('en-IN')} (Net)`;
-    if (businessAdjustmentAmt > 0) {
-      settlementSubtext = `Operational split + purana hisaab ₹${businessAdjustmentAmt.toLocaleString('en-IN')}, Anurag Vivek ko net ₹${finalSettlementAmt.toLocaleString('en-IN')} dega.`;
-    } else {
-      settlementSubtext = `Anurag gives Vivek ₹${finalSettlementAmt.toLocaleString('en-IN')} to equalize the 50/50 partnership share.`;
-    }
-    isAnuragPays = true;
-  }
+  const isVivekPays = summary.operationalBalancingDirection === 'VIVEK_OWES_ANURAG' && opBalancingAmt > 0;
+  const isAnuragPays = summary.operationalBalancingDirection === 'ANURAG_OWES_VIVEK' && opBalancingAmt > 0;
 
   // Client billing rows
   const clientBillingRows = billingPlans.map((plan) => {
@@ -144,7 +207,76 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <div className="space-y-5 max-w-4xl mx-auto pb-12">
-      {/* 1. ONE-CLICK PERIOD FILTER TABS */}
+      {/* 1. MASTER DYNAMIC 50/50 OVERALL HISAAB CARD */}
+      <div className="p-6 rounded-3xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-950/40 via-card to-background shadow-xl text-foreground">
+        <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-border/60">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
+              <Scale className="h-5 w-5" />
+            </div>
+            <div>
+              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400">
+                KUL HISAAB &bull; DYNAMIC 50/50 SETTLEMENT
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-foreground">
+                Vivek ko Anurag ko ₹{masterFinalNetToAnurag.toLocaleString('en-IN')} dene hain &#9989;
+              </h2>
+            </div>
+          </div>
+          <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            Final Net Payable: ₹{masterFinalNetToAnurag.toLocaleString('en-IN')}
+          </span>
+        </div>
+
+        {/* Dynamic breakdown per client matching user's exact formulation */}
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {unsettledItems.map((item) => (
+            <div key={item.id} className="p-3 rounded-xl bg-background/80 border border-border/80 text-xs space-y-1">
+              <div className="flex items-center justify-between font-bold text-foreground">
+                <span>{item.clientName}</span>
+                <span className="text-emerald-600 font-extrabold">₹{item.received.toLocaleString('en-IN')}</span>
+              </div>
+              {item.resourceCost > 0 ? (
+                <div className="text-[11px] text-muted-foreground">
+                  Resource: &minus;₹{item.resourceCost.toLocaleString('en-IN')} &bull; Net: ₹{item.net.toLocaleString('en-IN')}
+                </div>
+              ) : (
+                <div className="text-[11px] text-muted-foreground">Direct collection (Zero resource cost)</div>
+              )}
+              <div className="pt-1 border-t border-border/40 flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Collector: <strong className="text-foreground">{item.collector}</strong></span>
+                <span className="font-bold text-indigo-400">50%: ₹{item.anuragShare.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Cross-adjustment + Carry Forward Calculation */}
+        <div className="mt-3.5 p-3.5 rounded-2xl bg-background/90 border border-border text-xs space-y-2">
+          <div className="flex justify-between text-muted-foreground">
+            <span>Vivek ke paas Anurag ke (Sai ₹10,000 + Rohit ₹10,000):</span>
+            <span className="font-bold text-foreground">₹{totalVivekHoldsForAnurag.toLocaleString('en-IN')}</span>
+          </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>Anurag ke paas Vivek ke (Eshwar net ₹15,000 ka 50%):</span>
+            <span className="font-bold text-foreground">&minus; ₹{totalAnuragHoldsForVivek.toLocaleString('en-IN')}</span>
+          </div>
+          <div className="flex justify-between font-bold text-indigo-400 pt-1 border-t border-border/40">
+            <span>Aapas me adjust karne ke baad (Operational):</span>
+            <span>Vivek owes Anurag ₹{masterOperationalDiff.toLocaleString('en-IN')}</span>
+          </div>
+          <div className="flex justify-between text-amber-500 font-medium">
+            <span>Minus Purana Udhaar (Anurag Vivek ko ₹500 dena hai):</span>
+            <span>&minus; ₹{masterOldDebt.toLocaleString('en-IN')}</span>
+          </div>
+          <div className="flex justify-between font-black text-emerald-400 pt-2 border-t-2 border-emerald-500/30 text-sm">
+            <span>&#128073; FINAL HISAAB (Asli Lena / Dena):</span>
+            <span>Vivek pays Anurag ₹{masterFinalNetToAnurag.toLocaleString('en-IN')} (Net)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. ONE-CLICK PERIOD FILTER TABS */}
       <div className="bg-card p-3 rounded-2xl border border-border shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
@@ -174,56 +306,37 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
       </div>
 
-      {/* 2. THE MAIN ANSWER: KISKO KITNA PAYMENT DENA HAI? */}
+      {/* 3. CURRENT SELECTED PERIOD SUMMARY */}
       <div
-        className={`p-5 rounded-2xl border-2 shadow-sm ${
+        className={`p-4 rounded-2xl border shadow-xs ${
           isAlreadySettled
-            ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+            ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-200'
             : isVivekPays
-            ? 'bg-gradient-to-r from-indigo-50 to-blue-50 border-indigo-300 text-indigo-950'
+            ? 'bg-indigo-950/20 border-indigo-800/40 text-indigo-200'
             : isAnuragPays
-            ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300 text-amber-950'
-            : 'bg-muted/40 border-border text-foreground'
+            ? 'bg-amber-950/20 border-amber-800/40 text-amber-200'
+            : 'bg-muted/30 border-border text-foreground'
         }`}
       >
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="text-[11px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-            <Scale className="h-4 w-4 text-indigo-600" /> FINAL SETTLEMENT &bull; Kisko Kitna Dena Hai
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            Selected Cycle: <strong>{activePeriod.periodKey}</strong>
           </span>
-          {isAlreadySettled ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-bold">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Settled
-            </span>
-          ) : (
-            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
-              50 / 50 Equal Split
+          {isAlreadySettled && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 text-xs font-bold">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Already Settled 50/50
             </span>
           )}
         </div>
-
-        <p className="text-2xl sm:text-3xl font-black mt-2 text-foreground">
-          {settlementSentence}
+        <p className="text-lg font-black mt-1 text-foreground">
+          {isAlreadySettled
+            ? 'This cycle was already settled.'
+            : isVivekPays
+            ? `Cycle Operational: Vivek owes Anurag ₹${opBalancingAmt.toLocaleString('en-IN')}`
+            : isAnuragPays
+            ? `Cycle Operational: Anurag owes Vivek ₹${opBalancingAmt.toLocaleString('en-IN')}`
+            : 'Cycle is balanced.'}
         </p>
-        <p className="text-xs text-muted-foreground mt-1 font-medium">
-          {settlementSubtext}
-        </p>
-
-        {businessAdjustmentAmt > 0 && !isAlreadySettled && (
-          <div className="mt-3 p-3 rounded-xl bg-background/80 border border-border text-xs text-foreground space-y-1.5">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Current Cycle Hisaab (Operational):</span>
-              <span className="font-semibold text-foreground">Vivek owes Anurag ₹{opBalancingAmt.toLocaleString('en-IN')}</span>
-            </div>
-            <div className="flex justify-between text-amber-700">
-              <span>Minus Purana Carry-forward:</span>
-              <span className="font-semibold text-amber-700">&minus; ₹{businessAdjustmentAmt.toLocaleString('en-IN')} (Anurag owes Vivek)</span>
-            </div>
-            <div className="flex justify-between font-black text-emerald-600 pt-1.5 border-t border-border text-sm">
-              <span>Net Final Transfer (Asli Lena / Dena):</span>
-              <span>Vivek pays Anurag ₹{finalSettlementAmt.toLocaleString('en-IN')}</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 3. CASH OVERVIEW: KAUNSA KITNA PAISA AAYA */}

@@ -229,6 +229,14 @@ export class DatabaseRepository {
     return this.data.clientBillingPlans.filter((cbp) => cbp.billingPeriodId === periodId);
   }
 
+  public getAllBillingPlans(): ClientBillingPlan[] {
+    return [...this.data.clientBillingPlans];
+  }
+
+  public getAllSettlementPeriods(): SettlementPeriod[] {
+    return [...this.data.settlementPeriods];
+  }
+
   public getPaymentsForPeriod(periodId: string): ClientPayment[] {
     const planIds = new Set(this.getBillingPlans(periodId).map((p) => p.id));
     return this.data.clientPayments.filter((p) => planIds.has(p.billingPlanId));
@@ -257,9 +265,9 @@ export class DatabaseRepository {
   }
 
   public getBusinessAdjustments(periodId?: string): BusinessAdjustment[] {
-    if (!periodId) return this.data.businessAdjustments;
+    if (!periodId || periodId === 'ALL' || periodId === 'OVERALL') return this.data.businessAdjustments;
     return this.data.businessAdjustments.filter(
-      (ba) => ba.effectiveBillingPeriodId === periodId || ba.effectiveBillingPeriodId === 'ALL' || !ba.effectiveBillingPeriodId
+      (ba) => ba.effectiveBillingPeriodId === periodId
     );
   }
 
@@ -1493,7 +1501,7 @@ export class DatabaseRepository {
           toPartnerId: vivekId,
           amount: '500.00',
           reason: 'Old business/work balance carry-forward (Anurag owes Vivek ₹500)',
-          effectiveBillingPeriodId: 'ALL',
+          effectiveBillingPeriodId: 'OVERALL',
           status: 'APPLIED',
           createdByPartnerId: anuragId,
           createdAt: '2026-08-01T00:00:00Z',
