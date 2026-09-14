@@ -91,8 +91,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const isAlreadySettled = Boolean(settlementRecord?.isSettled);
 
-  // Settlement direction & sentence
+  // Settlement direction & sentence (Incorporating business carry-forward)
   const opBalancingAmt = Number(summary.operationalBalancingTransfer);
+  const finalSettlementAmt = Number(summary.finalSettlementAmount);
+  const businessAdjustmentAmt = Number(summary.businessAdjustmentsTotal);
+
   let settlementSentence = 'No settlement required (Balanced)';
   let settlementSubtext = 'Both partners have equal cash entitlement.';
   let isVivekPays = false;
@@ -101,13 +104,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   if (isAlreadySettled) {
     settlementSentence = 'Already Settled 50/50';
     settlementSubtext = 'This period was already settled. No further payment transfer required.';
-  } else if (summary.operationalBalancingDirection === 'VIVEK_OWES_ANURAG' && opBalancingAmt > 0) {
-    settlementSentence = `Vivek pays Anurag ₹${opBalancingAmt.toLocaleString('en-IN')}`;
-    settlementSubtext = `Vivek received ₹${vivekCollected.toLocaleString('en-IN')} in his account. To make it equal 50/50 (₹${anuragEntitlement.toLocaleString('en-IN')} each), Vivek gives Anurag ₹${opBalancingAmt.toLocaleString('en-IN')}.`;
+  } else if (summary.finalSettlementDirection === 'VIVEK_PAYS_ANURAG' && finalSettlementAmt > 0) {
+    settlementSentence = `Vivek pays Anurag ₹${finalSettlementAmt.toLocaleString('en-IN')} (Net)`;
+    if (businessAdjustmentAmt > 0) {
+      settlementSubtext = `Operational split ke ₹${opBalancingAmt.toLocaleString('en-IN')} me se purane ₹${businessAdjustmentAmt.toLocaleString('en-IN')} kaat kar, Vivek Anurag ko net ₹${finalSettlementAmt.toLocaleString('en-IN')} dega.`;
+    } else {
+      settlementSubtext = `Vivek gives Anurag ₹${finalSettlementAmt.toLocaleString('en-IN')} to equalize the 50/50 partnership share.`;
+    }
     isVivekPays = true;
-  } else if (summary.operationalBalancingDirection === 'ANURAG_OWES_VIVEK' && opBalancingAmt > 0) {
-    settlementSentence = `Anurag pays Vivek ₹${opBalancingAmt.toLocaleString('en-IN')}`;
-    settlementSubtext = `Anurag received excess cash after expenses. To make it equal 50/50, Anurag gives Vivek ₹${opBalancingAmt.toLocaleString('en-IN')}.`;
+  } else if (summary.finalSettlementDirection === 'ANURAG_PAYS_VIVEK' && finalSettlementAmt > 0) {
+    settlementSentence = `Anurag pays Vivek ₹${finalSettlementAmt.toLocaleString('en-IN')} (Net)`;
+    if (businessAdjustmentAmt > 0) {
+      settlementSubtext = `Operational split + purana hisaab ₹${businessAdjustmentAmt.toLocaleString('en-IN')}, Anurag Vivek ko net ₹${finalSettlementAmt.toLocaleString('en-IN')} dega.`;
+    } else {
+      settlementSubtext = `Anurag gives Vivek ₹${finalSettlementAmt.toLocaleString('en-IN')} to equalize the 50/50 partnership share.`;
+    }
     isAnuragPays = true;
   }
 
@@ -197,12 +208,22 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           {settlementSubtext}
         </p>
 
-        <div className="mt-3 pt-3 border-t border-border/60 text-xs text-muted-foreground flex items-center gap-2">
-          <AlertCircle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-          <span>
-            <strong>Old business carry-forward:</strong> Anurag owes Vivek ₹500
-          </span>
-        </div>
+        {businessAdjustmentAmt > 0 && !isAlreadySettled && (
+          <div className="mt-3 p-3 rounded-xl bg-background/80 border border-border text-xs text-foreground space-y-1.5">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Current Cycle Hisaab (Operational):</span>
+              <span className="font-semibold text-foreground">Vivek owes Anurag ₹{opBalancingAmt.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex justify-between text-amber-700">
+              <span>Minus Purana Carry-forward:</span>
+              <span className="font-semibold text-amber-700">&minus; ₹{businessAdjustmentAmt.toLocaleString('en-IN')} (Anurag owes Vivek)</span>
+            </div>
+            <div className="flex justify-between font-black text-emerald-600 pt-1.5 border-t border-border text-sm">
+              <span>Net Final Transfer (Asli Lena / Dena):</span>
+              <span>Vivek pays Anurag ₹{finalSettlementAmt.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 3. CASH OVERVIEW: KAUNSA KITNA PAISA AAYA */}
