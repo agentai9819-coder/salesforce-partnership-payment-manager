@@ -74,29 +74,19 @@ export const REFERENCE_CLIENTS: ReferenceClientData[] = [
   {
     id: 'ganesh',
     name: 'Ganesh',
-    initialBillingRule: '₹70,000 total; ₹40,000 Mokika',
-    note: 'Remaining ₹30,000 is 50–50. Project started Sep, billing not started yet.',
+    initialBillingRule: '₹30,000 total (₹15,000 per 15-day cycle)',
+    note: '50–50 split between partners. ₹15k per 15-day cycle.',
     exampleBilling: {
-      september2026: '70000.00',
-    },
-    externalObligations: {
-      partyName: 'Mokika',
-      partyType: 'RESOURCE',
-      amount: '40000.00',
+      september2026: '30000.00',
     },
   },
   {
     id: 'rohit',
     name: 'Rohit',
-    initialBillingRule: '₹1,10,000 total; ₹70,000 broker',
-    note: 'Remaining ₹40,000 is 50–50. Project started Sep, billing not started yet.',
+    initialBillingRule: '₹40,000 total (₹20,000 per 15-day cycle)',
+    note: '50–50 split between partners. ₹20k per 15-day cycle.',
     exampleBilling: {
-      september2026: '110000.00',
-    },
-    externalObligations: {
-      partyName: 'Broker',
-      partyType: 'BROKER',
-      amount: '70000.00',
+      september2026: '40000.00',
     },
   },
 ];
