@@ -200,12 +200,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const isAlreadySettled = Boolean(settlementRecord?.isSettled);
 
-  // Active period operational settlement
-  const opBalancingAmt = Number(summary.operationalBalancingTransfer);
-  const finalSettlementAmt = Number(summary.finalSettlementAmount);
-  const isVivekPays = summary.operationalBalancingDirection === 'VIVEK_OWES_ANURAG' && opBalancingAmt > 0;
-  const isAnuragPays = summary.operationalBalancingDirection === 'ANURAG_OWES_VIVEK' && opBalancingAmt > 0;
-
   // Client billing rows
   const clientBillingRows = billingPlans.map((plan) => {
     const client = clientMap.get(plan.clientId);
@@ -355,37 +349,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
       </div>
 
-      {/* 3. CURRENT SELECTED PERIOD SUMMARY */}
-      <div
-        className={`p-4 rounded-2xl border shadow-xs ${
-          isAlreadySettled
-            ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-200'
-            : isVivekPays
-            ? 'bg-indigo-950/20 border-indigo-800/40 text-indigo-200'
-            : isAnuragPays
-            ? 'bg-amber-950/20 border-amber-800/40 text-amber-200'
-            : 'bg-muted/30 border-border text-foreground'
-        }`}
-      >
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-            Selected Cycle: <strong>{activePeriod.periodKey}</strong>
+      {/* 3. CURRENT SELECTED PERIOD HEADER */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pt-1 pb-1">
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            Cycle Inflow & Collections
           </span>
-          {isAlreadySettled && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 text-xs font-bold">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Already Settled 50/50
-            </span>
-          )}
+          <h2 className="text-base font-black text-foreground">
+            {periodTabs.find((t) => t.key === activePeriod.periodKey)?.label || activePeriod.periodKey} ({activePeriod.periodKey})
+          </h2>
         </div>
-        <p className="text-lg font-black mt-1 text-foreground">
-          {isAlreadySettled
-            ? 'This cycle was already settled.'
-            : isVivekPays
-            ? `Cycle Operational: Vivek owes Anurag ₹${opBalancingAmt.toLocaleString('en-IN')}`
-            : isAnuragPays
-            ? `Cycle Operational: Anurag owes Vivek ₹${opBalancingAmt.toLocaleString('en-IN')}`
-            : 'Cycle is balanced.'}
-        </p>
+        {isAlreadySettled && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 text-xs font-bold border border-emerald-500/30">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Already Settled
+          </span>
+        )}
       </div>
 
       {/* 3. CASH OVERVIEW: KAUNSA KITNA PAISA AAYA */}
