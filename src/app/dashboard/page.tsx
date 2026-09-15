@@ -169,6 +169,27 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // Global one-time carry forward debt (Anurag owes Vivek ₹500)
   const masterOldDebt = 500;
   const masterFinalNetToAnurag = masterOperationalDiff - masterOldDebt;
+  const isMasterVivekPays = masterFinalNetToAnurag > 0;
+  const isMasterAnuragPays = masterFinalNetToAnurag < 0;
+  const absFinalNet = Math.abs(masterFinalNetToAnurag);
+
+  let masterSentence = 'Hisaab Bilkul Barabar (Balanced)';
+  if (isMasterVivekPays) {
+    masterSentence = `Vivek ko Anurag ko ₹${absFinalNet.toLocaleString('en-IN')} dene hain \u2705`;
+  } else if (isMasterAnuragPays) {
+    masterSentence = `Anurag ko Vivek ko ₹${absFinalNet.toLocaleString('en-IN')} dene hain \u2705`;
+  }
+
+  const vivekItems = unsettledItems.filter((i) => i.collector === 'VIVEK');
+  const anuragItems = unsettledItems.filter((i) => i.collector === 'ANURAG');
+
+  const vivekBreakdownStr = vivekItems.length > 0
+    ? vivekItems.map((i) => `${i.clientName} ₹${i.anuragShare.toLocaleString('en-IN')}`).join(' + ')
+    : 'None';
+
+  const anuragBreakdownStr = anuragItems.length > 0
+    ? anuragItems.map((i) => `${i.clientName} ₹${i.vivekShare.toLocaleString('en-IN')}`).join(' + ')
+    : 'None';
 
   // Formatted numbers for active period
   const totalReceived = Number(summary.totalCollected);
@@ -208,28 +229,44 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   return (
     <div className="space-y-5 max-w-4xl mx-auto pb-12">
       {/* 1. MASTER DYNAMIC 50/50 OVERALL HISAAB CARD */}
-      <div className="p-6 rounded-3xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-950/40 via-card to-background shadow-xl text-foreground">
+      <div className={`p-6 rounded-3xl border-2 shadow-xl text-foreground ${
+        isMasterVivekPays
+          ? 'border-emerald-500/40 bg-gradient-to-br from-emerald-950/40 via-card to-background'
+          : isMasterAnuragPays
+          ? 'border-amber-500/40 bg-gradient-to-br from-amber-950/40 via-card to-background'
+          : 'border-border bg-card'
+      }`}>
         <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-border/60">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
+            <div className={`flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-md ${
+              isMasterVivekPays
+                ? 'bg-emerald-500 shadow-emerald-500/20'
+                : 'bg-amber-500 shadow-amber-500/20'
+            }`}>
               <Scale className="h-5 w-5" />
             </div>
             <div>
-              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400">
+              <span className={`text-[11px] font-black uppercase tracking-wider ${
+                isMasterVivekPays ? 'text-emerald-400' : 'text-amber-400'
+              }`}>
                 KUL HISAAB &bull; DYNAMIC 50/50 SETTLEMENT
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-foreground">
-                Vivek ko Anurag ko ₹{masterFinalNetToAnurag.toLocaleString('en-IN')} dene hain &#9989;
+                {masterSentence}
               </h2>
             </div>
           </div>
-          <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-            Final Net Payable: ₹{masterFinalNetToAnurag.toLocaleString('en-IN')}
+          <span className={`text-xs font-black px-3 py-1 rounded-full border ${
+            isMasterVivekPays
+              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+              : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+          }`}>
+            Final Net: ₹{absFinalNet.toLocaleString('en-IN')}
           </span>
         </div>
 
         {/* Dynamic breakdown per client matching user's exact formulation */}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
           {unsettledItems.map((item) => (
             <div key={item.id} className="p-3 rounded-xl bg-background/80 border border-border/80 text-xs space-y-1">
               <div className="flex items-center justify-between font-bold text-foreground">
@@ -241,10 +278,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                   Resource: &minus;₹{item.resourceCost.toLocaleString('en-IN')} &bull; Net: ₹{item.net.toLocaleString('en-IN')}
                 </div>
               ) : (
-                <div className="text-[11px] text-muted-foreground">Direct collection (Zero resource cost)</div>
+                <div className="text-[11px] text-muted-foreground">Direct collection</div>
               )}
               <div className="pt-1 border-t border-border/40 flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground">Collector: <strong className="text-foreground">{item.collector}</strong></span>
+                <span className="text-muted-foreground">In Bank: <strong className="text-foreground">{item.collector}</strong></span>
                 <span className="font-bold text-indigo-400">50%: ₹{item.anuragShare.toLocaleString('en-IN')}</span>
               </div>
             </div>
@@ -254,16 +291,22 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         {/* Cross-adjustment + Carry Forward Calculation */}
         <div className="mt-3.5 p-3.5 rounded-2xl bg-background/90 border border-border text-xs space-y-2">
           <div className="flex justify-between text-muted-foreground">
-            <span>Vivek ke paas Anurag ke (Sai ₹10,000 + Rohit ₹10,000):</span>
+            <span>Vivek ke paas Anurag ke ({vivekBreakdownStr}):</span>
             <span className="font-bold text-foreground">₹{totalVivekHoldsForAnurag.toLocaleString('en-IN')}</span>
           </div>
           <div className="flex justify-between text-muted-foreground">
-            <span>Anurag ke paas Vivek ke (Eshwar net ₹15,000 ka 50%):</span>
+            <span>Anurag ke paas Vivek ke ({anuragBreakdownStr}):</span>
             <span className="font-bold text-foreground">&minus; ₹{totalAnuragHoldsForVivek.toLocaleString('en-IN')}</span>
           </div>
           <div className="flex justify-between font-bold text-indigo-400 pt-1 border-t border-border/40">
             <span>Aapas me adjust karne ke baad (Operational):</span>
-            <span>Vivek owes Anurag ₹{masterOperationalDiff.toLocaleString('en-IN')}</span>
+            <span>
+              {masterOperationalDiff > 0
+                ? `Vivek owes Anurag ₹${masterOperationalDiff.toLocaleString('en-IN')}`
+                : masterOperationalDiff < 0
+                ? `Anurag owes Vivek ₹${Math.abs(masterOperationalDiff).toLocaleString('en-IN')}`
+                : '₹0 (Pura 50/50 barabar)'}
+            </span>
           </div>
           <div className="flex justify-between text-amber-500 font-medium">
             <span>Minus Purana Udhaar (Anurag Vivek ko ₹500 dena hai):</span>
@@ -271,7 +314,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </div>
           <div className="flex justify-between font-black text-emerald-400 pt-2 border-t-2 border-emerald-500/30 text-sm">
             <span>&#128073; FINAL HISAAB (Asli Lena / Dena):</span>
-            <span>Vivek pays Anurag ₹{masterFinalNetToAnurag.toLocaleString('en-IN')} (Net)</span>
+            <span>
+              {isMasterVivekPays
+                ? `Vivek pays Anurag ₹${absFinalNet.toLocaleString('en-IN')} (Net)`
+                : isMasterAnuragPays
+                ? `Anurag pays Vivek ₹${absFinalNet.toLocaleString('en-IN')} (Net)`
+                : 'Pura hisaab barabar (Zero Net Transfer)'}
+            </span>
           </div>
         </div>
       </div>

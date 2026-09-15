@@ -82,8 +82,8 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(saiPlan.grossBillingAmount).toBe('25000.00');
   });
 
-  // G. Current September actual received: Rohit ₹20,000 received by Vivek, Cycle 2 = ₹0.
-  it('G. Current September actual received: Rohit ₹20,000 received by Vivek, Cycle 2 = ₹0', () => {
+  // G. Current September actual received: Rohit ₹20,000 (Vivek) + Sai ₹25,000 (Anurag), Cycle 2 = ₹0.
+  it('G. Current September actual received: Rohit ₹20,000 (Vivek) + Sai ₹25,000 (Anurag), Cycle 2 = ₹0', () => {
     const periodSepC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
     const periodSepC2 = db.getBillingPeriodByKey(orgId, '2026-09-C2')!;
 
@@ -97,7 +97,7 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
       .filter((p) => p.status === 'CONFIRMED')
       .reduce((sum, p) => sum + Number(p.amountReceived), 0);
 
-    expect(c1Confirmed).toBe(20000);
+    expect(c1Confirmed).toBe(45000);
     expect(c2Confirmed).toBe(0);
   });
 
