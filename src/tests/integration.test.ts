@@ -82,8 +82,8 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(saiPlan.grossBillingAmount).toBe('25000.00');
   });
 
-  // G. Current September actual received: Rohit ₹20,000 (Vivek) + Sai ₹25,000 (Anurag), Cycle 2 = ₹0.
-  it('G. Current September actual received: Rohit ₹20,000 (Vivek) + Sai ₹25,000 (Anurag), Cycle 2 = ₹0', () => {
+  // G. Current September actual received: Rohit ₹20,000 (Vivek) + Sai ₹25,000 (Anurag) + Eshwar ₹25,000 (Anurag) = ₹70,000, Cycle 2 = ₹0.
+  it('G. Current September actual received: Rohit ₹20,000 (Vivek) + Sai ₹25,000 (Anurag) + Eshwar ₹25,000 (Anurag) = ₹70,000, Cycle 2 = ₹0', () => {
     const periodSepC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
     const periodSepC2 = db.getBillingPeriodByKey(orgId, '2026-09-C2')!;
 
@@ -97,12 +97,12 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
       .filter((p) => p.status === 'CONFIRMED')
       .reduce((sum, p) => sum + Number(p.amountReceived), 0);
 
-    expect(c1Confirmed).toBe(45000);
+    expect(c1Confirmed).toBe(70000);
     expect(c2Confirmed).toBe(0);
   });
 
-  // H. Eshwar monthly billing = ₹50,000.
-  it('H. Eshwar monthly billing = ₹50,000', () => {
+  // H. Eshwar monthly billing: August = ₹50,000, September = ₹25,000 (Cycle 2 on hold).
+  it('H. Eshwar monthly billing: August = ₹50,000, September = ₹25,000 (Cycle 2 on hold)', () => {
     const periodAug = db.getBillingPeriodByKey(orgId, '2026-08')!;
     const eshwarPlanAug = db.getBillingPlans(periodAug.id).find((p) => p.clientId === 'client-eshwar')!;
     expect(eshwarPlanAug).toBeDefined();
@@ -111,7 +111,7 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     const periodSep = db.getBillingPeriodByKey(orgId, '2026-09')!;
     const eshwarPlanSep = db.getBillingPlans(periodSep.id).find((p) => p.clientId === 'client-eshwar')!;
     expect(eshwarPlanSep).toBeDefined();
-    expect(eshwarPlanSep.grossBillingAmount).toBe('50000.00');
+    expect(eshwarPlanSep.grossBillingAmount).toBe('25000.00');
   });
 
   // I. Eshwar Cycle 1 = ₹25,000 received, ₹10,000 external, ₹15,000 net, ₹7,500 each.
@@ -566,5 +566,87 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(p1.id).toBe(p2.id);
     const allMatching = db.getPaymentsForPeriod(testPeriod.id).filter((p) => p.idempotencyKey === key);
     expect(allMatching.length).toBe(1);
+  });
+
+  // Z. Eshwar September Cycle 1 payment (₹25k) + Divyanshu (₹10k) + Support On Hold + Dynamic settlement = ₹8,000
+  it('Z. Eshwar September Cycle 1 payment, Divyanshu dev cost, support on hold, and dynamic ₹8,000 settlement', () => {
+    const periodSepC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
+    const eshwarClient = db.getClients(orgId).find((c) => c.id === 'client-eshwar')!;
+    expect(eshwarClient.status).toBe('ON_HOLD');
+
+    // Cycle 1 payment for Eshwar
+    const eshwarPaymentC1 = db
+      .getPaymentsForPeriod(periodSepC1.id)
+      .find((p) => p.billingPlanId === 'cbp-eshwar-sep-c1')!;
+    expect(eshwarPaymentC1).toBeDefined();
+    expect(eshwarPaymentC1.amountReceived).toBe('25000.00');
+    expect(eshwarPaymentC1.collectedByPartnerId).toBe(anuragId);
+
+    // Divyanshu disbursement in Cycle 1
+    const divyanshuDisbC1 = db
+      .getExternalDisbursements(periodSepC1.id)
+      .find((d) => d.id === 'ed-sep-eshwar-c1')!;
+    expect(divyanshuDisbC1).toBeDefined();
+    expect(divyanshuDisbC1.amountPaid).toBe('10000.00');
+    expect(divyanshuDisbC1.disbursedByPartnerId).toBe(anuragId);
+
+    // Cycle 2 billing is paused / on hold
+    const periodSepC2 = db.getBillingPeriodByKey(orgId, '2026-09-C2')!;
+    const eshwarPlanC2 = db
+      .getBillingPlans(periodSepC2.id)
+      .find((p) => p.clientId === 'client-eshwar')!;
+    expect(eshwarPlanC2.grossBillingAmount).toBe('0.00');
+
+    // Dynamic calculations across all active unsettled cycles
+    const allPayments = db.getAllPayments().filter((p) => p.status === 'CONFIRMED');
+    const allDisbs = db.getAllDisbursements().filter((d) => d.status === 'CONFIRMED');
+    const allPlans = db.getAllBillingPlans();
+    const allObs = db.getAllObligations();
+    const settledPeriodIds = new Set(
+      db.getAllSettlementPeriods().filter((sp) => sp.isSettled).map((sp) => sp.billingPeriodId)
+    );
+
+    const activeCyclePayments = allPayments.filter((p) => {
+      const isCycle = p.billingPlanId.includes('-c1') || p.billingPlanId.includes('-c2');
+      if (!isCycle) return false;
+      const plan = allPlans.find((bp) => bp.id === p.billingPlanId);
+      if (plan && settledPeriodIds.has(plan.billingPeriodId)) return false;
+      return true;
+    });
+
+    // Compute net shares
+    let vivekHoldsForAnurag = 0;
+    let anuragHoldsForVivek = 0;
+
+    activeCyclePayments.forEach((p) => {
+      const plan = allPlans.find((bp) => bp.id === p.billingPlanId);
+      const planObligationIds = new Set(
+        allObs.filter((o) => o.billingPlanId === plan?.id).map((o) => o.id)
+      );
+      const disbs = allDisbs.filter((d) =>
+        d.obligationId
+          ? planObligationIds.has(d.obligationId)
+          : d.billingPeriodId === plan?.billingPeriodId
+      );
+      const resourceCost = disbs.reduce((sum, d) => sum + Number(d.amountPaid), 0);
+      const net = Number(p.amountReceived) - resourceCost;
+      const share = net / 2;
+
+      if (p.collectedByPartnerId === vivekId) {
+        vivekHoldsForAnurag += share;
+      } else {
+        anuragHoldsForVivek += share;
+      }
+    });
+
+    expect(vivekHoldsForAnurag).toBe(20000); // Rohit ₹10,000 + Sai ₹10,000
+    expect(anuragHoldsForVivek).toBe(27500); // Eshwar Aug ₹7,500 + Sai Sep ₹12,500 + Eshwar Sep ₹7,500
+
+    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // -7500 (Anurag owes Vivek ₹7,500)
+    expect(operationalDiff).toBe(-7500);
+
+    const oldDebt = 500;
+    const finalTransfer = operationalDiff - oldDebt; // -8000
+    expect(finalTransfer).toBe(-8000);
   });
 });

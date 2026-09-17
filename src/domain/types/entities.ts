@@ -24,7 +24,7 @@ export interface Partner {
   createdAt: string;
 }
 
-export type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+export type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED' | 'ON_HOLD';
 
 export interface Client {
   id: string;

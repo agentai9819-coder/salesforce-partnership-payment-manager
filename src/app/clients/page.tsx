@@ -22,9 +22,9 @@ export default async function ClientsPage() {
     }
     if (lower.includes('eshwar')) {
       return {
-        billing: '₹50,000 / month',
-        schedule: 'Twice a month: ₹25k Cycle 1, ₹25k Cycle 2',
-        resource: 'External Dev: ₹10,000 per 15-day cycle (₹20,000/mo)',
+        billing: '₹50,000 / month (SUPPORT ON HOLD)',
+        schedule: 'Service on hold by client after Sep 1-15 (₹25k cleared)',
+        resource: 'External Dev: Divyanshu (₹10,000 per cycle when active)',
       };
     }
     if (lower.includes('ganesh')) {
@@ -93,7 +93,11 @@ export default async function ClientsPage() {
                       <td className="p-3 text-muted-foreground">{details.resource}</td>
                       <td className="p-3">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          c.status === 'ACTIVE' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
+                          c.status === 'ACTIVE'
+                            ? 'bg-success/10 text-success'
+                            : c.status === 'ON_HOLD'
+                            ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                            : 'bg-muted text-muted-foreground'
                         }`}>
                           {c.status}
                         </span>

@@ -255,6 +255,10 @@ export class DatabaseRepository {
     return this.data.externalObligations.filter((o) => planIds.has(o.billingPlanId));
   }
 
+  public getAllObligations(): ExternalObligation[] {
+    return this.data.externalObligations;
+  }
+
   public getExternalDisbursements(periodId?: string): ExternalDisbursement[] {
     if (!periodId) return this.data.externalDisbursements;
     return this.data.externalDisbursements.filter((ed) => ed.billingPeriodId === periodId);
@@ -909,10 +913,10 @@ export class DatabaseRepository {
           id: 'client-eshwar',
           organizationId: orgId,
           name: 'Eshwar',
-          status: 'ACTIVE',
-          defaultNote: '₹50,000/month, ₹25k per 15-day cycle; ₹10k external dev per cycle',
+          status: 'ON_HOLD',
+          defaultNote: 'Support service on hold by client. Last payment cleared Sep 1-15 (₹25k). Next payment when service resumes.',
           createdAt: '2026-08-01T00:00:00Z',
-          updatedAt: '2026-08-01T00:00:00Z',
+          updatedAt: '2026-09-17T00:00:00Z',
         },
         {
           id: 'client-ganesh',
@@ -1113,12 +1117,12 @@ export class DatabaseRepository {
           id: 'cbp-eshwar-sep-c2',
           clientId: 'client-eshwar',
           billingPeriodId: periodSepC2Id,
-          grossBillingAmount: '25000.00',
-          notes: 'Cycle 2 (Sep 16-30) billing',
+          grossBillingAmount: '0.00',
+          notes: 'ON HOLD: Support service put on hold by client. No payment expected until service resumes.',
           createdByPartnerId: anuragId,
           updatedByPartnerId: anuragId,
           createdAt: '2026-09-16T00:00:00Z',
-          updatedAt: '2026-09-16T00:00:00Z',
+          updatedAt: '2026-09-17T00:00:00Z',
         },
         {
           id: 'cbp-sai-sep-c2',
@@ -1159,12 +1163,12 @@ export class DatabaseRepository {
           id: 'cbp-eshwar-sep',
           clientId: 'client-eshwar',
           billingPeriodId: periodSepId,
-          grossBillingAmount: '50000.00',
-          notes: 'September billing total (₹25k Cycle 1 + ₹25k Cycle 2)',
+          grossBillingAmount: '25000.00',
+          notes: 'September billing total ₹25,000 (Cycle 1 cleared; Cycle 2 on hold by client)',
           createdByPartnerId: anuragId,
           updatedByPartnerId: anuragId,
           createdAt: '2026-09-01T00:00:00Z',
-          updatedAt: '2026-09-01T00:00:00Z',
+          updatedAt: '2026-09-17T00:00:00Z',
         },
         {
           id: 'cbp-sai-sep',
@@ -1363,6 +1367,35 @@ export class DatabaseRepository {
           createdAt: '2026-09-11T10:00:00Z',
           updatedAt: '2026-09-11T10:00:00Z',
         },
+        // Eshwar September 1-15 (Received by Anurag)
+        {
+          id: 'pay-sep-eshwar-c1',
+          billingPlanId: 'cbp-eshwar-sep-c1',
+          collectedByPartnerId: anuragId,
+          paymentDate: '2026-09-16',
+          amountReceived: '25000.00',
+          paymentReference: 'ESHWAR-SEP-C1',
+          status: 'CONFIRMED',
+          notes: 'Sep 1-15 payment received by Anurag (last payment before support hold)',
+          idempotencyKey: 'idem-eshwar-sep-c1',
+          createdByPartnerId: anuragId,
+          createdAt: '2026-09-16T12:00:00Z',
+          updatedAt: '2026-09-16T12:00:00Z',
+        },
+        {
+          id: 'pay-sep-eshwar-full1',
+          billingPlanId: 'cbp-eshwar-sep',
+          collectedByPartnerId: anuragId,
+          paymentDate: '2026-09-16',
+          amountReceived: '25000.00',
+          paymentReference: 'ESHWAR-SEP-FULL-P1',
+          status: 'CONFIRMED',
+          notes: 'Sep 1-15 payment received by Anurag (last payment before support hold)',
+          idempotencyKey: 'idem-eshwar-sep-full1',
+          createdByPartnerId: anuragId,
+          createdAt: '2026-09-16T12:00:00Z',
+          updatedAt: '2026-09-16T12:00:00Z',
+        },
       ],
       externalParties: [
         {
@@ -1432,16 +1465,16 @@ export class DatabaseRepository {
           id: 'eo-eshwar-c2',
           billingPlanId: 'cbp-eshwar-sep-c2',
           externalPartyId: 'ep-eshwar-dev',
-          expectedAmount: '10000.00',
-          notes: 'Contractual resource cost (Cycle 2)',
+          expectedAmount: '0.00',
+          notes: 'ON HOLD: Service on hold, no resource cost for Cycle 2',
           createdAt: '2026-09-16T00:00:00Z',
         },
         {
           id: 'eo-eshwar',
           billingPlanId: 'cbp-eshwar-sep',
           externalPartyId: 'ep-eshwar-dev',
-          expectedAmount: '20000.00',
-          notes: 'Contractual resource cost (Full month)',
+          expectedAmount: '10000.00',
+          notes: 'Contractual resource cost (Cycle 1 only; Cycle 2 on hold)',
           createdAt: '2026-09-01T00:00:00Z',
         },
       ],
@@ -1506,7 +1539,36 @@ export class DatabaseRepository {
           createdAt: '2026-08-20T12:30:00Z',
           updatedAt: '2026-08-20T12:30:00Z',
         },
-        // Note: September disbursements are ZERO.
+        // September Cycle 1 (Sep 1 - Sep 15)
+        {
+          id: 'ed-sep-eshwar-c1',
+          obligationId: 'eo-eshwar-c1',
+          billingPeriodId: periodSepC1Id,
+          externalPartyId: 'ep-eshwar-dev',
+          disbursedByPartnerId: anuragId,
+          amountPaid: '10000.00',
+          disbursementDate: '2026-09-16',
+          status: 'CONFIRMED',
+          notes: '₹10,000 disbursed to Divyanshu by Anurag (Sep Cycle 1)',
+          createdByPartnerId: anuragId,
+          createdAt: '2026-09-16T12:30:00Z',
+          updatedAt: '2026-09-16T12:30:00Z',
+        },
+        // September Full Month
+        {
+          id: 'ed-sep-eshwar-full1',
+          obligationId: 'eo-eshwar',
+          billingPeriodId: periodSepId,
+          externalPartyId: 'ep-eshwar-dev',
+          disbursedByPartnerId: anuragId,
+          amountPaid: '10000.00',
+          disbursementDate: '2026-09-16',
+          status: 'CONFIRMED',
+          notes: '₹10,000 disbursed to Divyanshu by Anurag (Sep Part 1)',
+          createdByPartnerId: anuragId,
+          createdAt: '2026-09-16T12:30:00Z',
+          updatedAt: '2026-09-16T12:30:00Z',
+        },
       ],
       businessAdjustments: [
         {

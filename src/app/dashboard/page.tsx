@@ -86,6 +86,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const allPartnershipPayments = db.getAllPayments().filter((p) => p.status === 'CONFIRMED');
   const allPartnershipDisbursements = db.getAllDisbursements().filter((d) => d.status === 'CONFIRMED');
   const allBillingPlansList = db.getAllBillingPlans();
+  const allObligationsList = db.getAllObligations();
   const settledPeriodIds = new Set(
     db.getAllSettlementPeriods().filter((sp) => sp.isSettled).map((sp) => sp.billingPeriodId)
   );
@@ -124,12 +125,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     const received = Number(p.amountReceived);
 
     // Direct disbursement associated with this client/plan
-    const disbs = activeCycleDisbursements.filter((d) => d.billingPeriodId === plan?.billingPeriodId);
-    // Specifically Divyanshu on Eshwar
-    const isEshwar = clientName.toLowerCase().includes('eshwar');
-    const resourceCost = isEshwar
-      ? disbs.reduce((sum, d) => sum + Number(d.amountPaid), 0)
-      : 0;
+    const planObligationIds = new Set(
+      allObligationsList.filter((o) => o.billingPlanId === plan?.id).map((o) => o.id)
+    );
+    const disbs = activeCycleDisbursements.filter((d) =>
+      d.obligationId
+        ? planObligationIds.has(d.obligationId)
+        : d.billingPeriodId === plan?.billingPeriodId && clientName.toLowerCase().includes('eshwar')
+    );
+    const resourceCost = disbs.reduce((sum, d) => sum + Number(d.amountPaid), 0);
 
     const net = received - resourceCost;
     const isAnuragCollector = p.collectedByPartnerId === anurag.id;
@@ -207,9 +211,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     const received = planPayments.reduce((sum, p) => sum + Number(p.amountReceived), 0);
     const expected = Number(plan.grossBillingAmount);
     const outstanding = Math.max(0, expected - received);
+    const isHold = client?.status === 'ON_HOLD';
     return {
       clientId: plan.clientId,
       clientName: client?.name || 'Unknown Client',
+      isHold,
       expected,
       received,
       outstanding,
@@ -260,7 +266,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
 
         {/* Dynamic breakdown per client matching user's exact formulation */}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
           {unsettledItems.map((item) => (
             <div key={item.id} className="p-3 rounded-xl bg-background/80 border border-border/80 text-xs space-y-1">
               <div className="flex items-center justify-between font-bold text-foreground">
@@ -530,7 +536,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 ) : (
                   clientBillingRows.map((row) => (
                     <tr key={row.clientId} className="hover:bg-muted/30">
-                      <td className="py-2.5 font-bold text-foreground">{row.clientName}</td>
+                      <td className="py-2.5 font-bold text-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <span>{row.clientName}</span>
+                          {row.isHold && (
+                            <span className="text-[9px] bg-amber-500/15 text-amber-500 font-bold px-1.5 py-0.2 rounded border border-amber-500/30 uppercase">
+                              Hold
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-2.5 text-right font-medium text-foreground">
                         ₹{row.expected.toLocaleString('en-IN')}
                       </td>
