@@ -266,7 +266,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
 
         {/* Dynamic breakdown per client matching user's exact formulation */}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {unsettledItems.map((item) => (
             <div key={item.id} className="p-3 rounded-xl bg-background/80 border border-border/80 text-xs space-y-1">
               <div className="flex items-center justify-between font-bold text-foreground">

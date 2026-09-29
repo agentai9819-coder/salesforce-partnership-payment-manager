@@ -29,9 +29,9 @@ export default async function ClientsPage() {
     }
     if (lower.includes('ganesh')) {
       return {
-        billing: '₹70,000 (Example contract)',
-        schedule: 'Billing not started yet',
-        resource: 'Mokika: ₹40,000 obligation',
+        billing: '₹60,000 (September)',
+        schedule: 'Full payment cleared Sep 30 (Cycle 2)',
+        resource: 'Monika: ₹40,000 paid (Net Profit: ₹20,000)',
       };
     }
     if (lower.includes('rohit')) {

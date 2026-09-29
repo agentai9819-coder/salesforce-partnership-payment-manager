@@ -82,8 +82,8 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(saiPlan.grossBillingAmount).toBe('25000.00');
   });
 
-  // G. Current September actual received: Rohit ₹20,000 (Vivek) + Sai ₹25,000 (Anurag) + Eshwar ₹25,000 (Anurag) = ₹70,000, Cycle 2 = ₹0.
-  it('G. Current September actual received: Rohit ₹20,000 (Vivek) + Sai ₹25,000 (Anurag) + Eshwar ₹25,000 (Anurag) = ₹70,000, Cycle 2 = ₹0', () => {
+  // G. Current September actual received: Rohit ₹20k + Sai ₹25k + Eshwar ₹25k (Cycle 1) = ₹70k, Cycle 2 = ₹60k (Ganesh).
+  it('G. Current September actual received: Rohit ₹20k + Sai ₹25k + Eshwar ₹25k (Cycle 1) = ₹70k, Cycle 2 = ₹60k (Ganesh)', () => {
     const periodSepC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
     const periodSepC2 = db.getBillingPeriodByKey(orgId, '2026-09-C2')!;
 
@@ -98,7 +98,7 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
       .reduce((sum, p) => sum + Number(p.amountReceived), 0);
 
     expect(c1Confirmed).toBe(70000);
-    expect(c2Confirmed).toBe(0);
+    expect(c2Confirmed).toBe(60000);
   });
 
   // H. Eshwar monthly billing: August = ₹50,000, September = ₹25,000 (Cycle 2 on hold).
@@ -446,8 +446,8 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(sepPayments.some((p) => p.id === payment.id)).toBe(false);
   });
 
-  // U. Ganesh does not create fake September cash.
-  it('U. Ganesh does not create fake September cash', () => {
+  // U. Ganesh payment is recorded in Cycle 2 / September (₹60,000), not in Cycle 1 (0).
+  it('U. Ganesh payment is recorded in Cycle 2 / September (₹60,000), not in Cycle 1 (0)', () => {
     const periodC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
     const periodMonth = db.getBillingPeriodByKey(orgId, '2026-09')!;
 
@@ -461,7 +461,8 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     });
 
     expect(ganeshPaymentsC1.length).toBe(0);
-    expect(ganeshPaymentsMonth.length).toBe(0);
+    expect(ganeshPaymentsMonth.length).toBe(1);
+    expect(ganeshPaymentsMonth[0].amountReceived).toBe('60000.00');
   });
 
   // V. Rohit September Cycle 1 payment of ₹20,000 received by Vivek.
@@ -640,13 +641,13 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     });
 
     expect(vivekHoldsForAnurag).toBe(20000); // Rohit ₹10,000 + Sai ₹10,000
-    expect(anuragHoldsForVivek).toBe(27500); // Eshwar Aug ₹7,500 + Sai Sep ₹12,500 + Eshwar Sep ₹7,500
+    expect(anuragHoldsForVivek).toBe(37500); // Eshwar Aug ₹7,500 + Sai Sep ₹12,500 + Eshwar Sep ₹7,500 + Ganesh Sep ₹10,000
 
-    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // -7500 (Anurag owes Vivek ₹7,500)
-    expect(operationalDiff).toBe(-7500);
+    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // -17500 (Anurag owes Vivek ₹17,500)
+    expect(operationalDiff).toBe(-17500);
 
     const oldDebt = 500;
-    const finalTransfer = operationalDiff - oldDebt; // -8000
-    expect(finalTransfer).toBe(-8000);
+    const finalTransfer = operationalDiff - oldDebt; // -18000
+    expect(finalTransfer).toBe(-18000);
   });
 });
