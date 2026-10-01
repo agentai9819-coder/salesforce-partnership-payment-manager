@@ -36,9 +36,9 @@ export default async function ClientsPage() {
     }
     if (lower.includes('rohit')) {
       return {
-        billing: '₹1,10,000 (Contractual total)',
-        schedule: 'Billing not started yet',
-        resource: 'Broker: ₹70,000 obligation (Partnership: ₹40,000)',
+        billing: '₹40,000 (September Total Received)',
+        schedule: 'Twice a month: ₹20k Cycle 1, ₹20k Cycle 2 (Both in Vivek Bank)',
+        resource: 'Broker obligation separate',
       };
     }
     return {
