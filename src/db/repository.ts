@@ -1338,6 +1338,20 @@ export class DatabaseRepository {
           createdAt: '2026-09-05T10:00:00Z',
           updatedAt: '2026-09-05T10:00:00Z',
         },
+        {
+          id: 'pay-sep-rohit-full1',
+          billingPlanId: 'cbp-rohit-sep',
+          collectedByPartnerId: vivekId,
+          paymentDate: '2026-09-05',
+          amountReceived: '20000.00',
+          paymentReference: 'ROHIT-SEP-FULL1',
+          status: 'CONFIRMED',
+          notes: 'Sep 1-15 payment received by Vivek',
+          idempotencyKey: 'idem-rohit-sep-full1',
+          createdByPartnerId: vivekId,
+          createdAt: '2026-09-05T10:00:00Z',
+          updatedAt: '2026-09-05T10:00:00Z',
+        },
         // Sai September 1-15 (Received by Anurag)
         {
           id: 'pay-sep-sai-c1',
