@@ -82,8 +82,8 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(saiPlan.grossBillingAmount).toBe('25000.00');
   });
 
-  // G. Current September actual received: Rohit ₹20k + Sai ₹25k + Eshwar ₹25k (Cycle 1) = ₹70k, Cycle 2 = ₹80k (Ganesh ₹60k + Rohit ₹20k).
-  it('G. Current September actual received: Rohit ₹20k + Sai ₹25k + Eshwar ₹25k (Cycle 1) = ₹70k, Cycle 2 = ₹80k (Ganesh ₹60k + Rohit ₹20k)', () => {
+  // G. Current September actual received: Rohit ₹20k + Sai ₹25k + Eshwar ₹25k (Cycle 1) = ₹70k, Cycle 2 = ₹60k (Ganesh).
+  it('G. Current September actual received: Rohit ₹20k + Sai ₹25k + Eshwar ₹25k (Cycle 1) = ₹70k, Cycle 2 = ₹60k (Ganesh)', () => {
     const periodSepC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
     const periodSepC2 = db.getBillingPeriodByKey(orgId, '2026-09-C2')!;
 
@@ -98,7 +98,7 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
       .reduce((sum, p) => sum + Number(p.amountReceived), 0);
 
     expect(c1Confirmed).toBe(70000);
-    expect(c2Confirmed).toBe(80000);
+    expect(c2Confirmed).toBe(60000);
   });
 
   // H. Eshwar monthly billing: August = ₹50,000, September = ₹25,000 (Cycle 2 on hold).
@@ -465,27 +465,18 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     expect(ganeshPaymentsMonth[0].amountReceived).toBe('60000.00');
   });
 
-  // V. Rohit September Cycle 1 & Cycle 2 payments of ₹20,000 each received by Vivek.
-  it('V. Rohit September Cycle 1 & Cycle 2 payments of ₹20,000 each received by Vivek', () => {
+  // V. Rohit September Cycle 1 payment of ₹20,000 received by Vivek.
+  it('V. Rohit September Cycle 1 payment of ₹20,000 received by Vivek', () => {
     const periodC1 = db.getBillingPeriodByKey(orgId, '2026-09-C1')!;
-    const periodC2 = db.getBillingPeriodByKey(orgId, '2026-09-C2')!;
 
     const rohitPaymentsC1 = db.getPaymentsForPeriod(periodC1.id).filter((p) => {
       const plan = db.getBillingPlans(periodC1.id).find((bp) => bp.id === p.billingPlanId);
-      return plan?.clientId === 'client-rohit';
-    });
-    const rohitPaymentsC2 = db.getPaymentsForPeriod(periodC2.id).filter((p) => {
-      const plan = db.getBillingPlans(periodC2.id).find((bp) => bp.id === p.billingPlanId);
       return plan?.clientId === 'client-rohit';
     });
 
     expect(rohitPaymentsC1.length).toBe(1);
     expect(rohitPaymentsC1[0].amountReceived).toBe('20000.00');
     expect(rohitPaymentsC1[0].collectedByPartnerId).toBe(vivekId);
-
-    expect(rohitPaymentsC2.length).toBe(1);
-    expect(rohitPaymentsC2[0].amountReceived).toBe('20000.00');
-    expect(rohitPaymentsC2[0].collectedByPartnerId).toBe(vivekId);
   });
 
   // W. Closed-period protection works.
@@ -649,14 +640,14 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
       }
     });
 
-    expect(vivekHoldsForAnurag).toBe(30000); // Rohit C1 ₹10,000 + Sai Aug ₹10,000 + Rohit C2 ₹10,000
+    expect(vivekHoldsForAnurag).toBe(20000); // Rohit ₹10,000 + Sai Aug ₹10,000
     expect(anuragHoldsForVivek).toBe(37500); // Eshwar Aug ₹7,500 + Sai Sep ₹12,500 + Eshwar Sep ₹7,500 + Ganesh Sep ₹10,000
 
-    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // -7500 (Anurag owes Vivek ₹7,500)
-    expect(operationalDiff).toBe(-7500);
+    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // -17500 (Anurag owes Vivek ₹17,500)
+    expect(operationalDiff).toBe(-17500);
 
     const oldDebt = 500;
-    const finalTransfer = operationalDiff - oldDebt; // -8000
-    expect(finalTransfer).toBe(-8000);
+    const finalTransfer = operationalDiff - oldDebt; // -18000
+    expect(finalTransfer).toBe(-18000);
   });
 });

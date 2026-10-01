@@ -36,8 +36,8 @@ export default async function ClientsPage() {
     }
     if (lower.includes('rohit')) {
       return {
-        billing: '₹40,000 (September Total Received)',
-        schedule: 'Twice a month: ₹20k Cycle 1, ₹20k Cycle 2 (Both in Vivek Bank)',
+        billing: '₹20,000 (September Received by Vivek)',
+        schedule: 'Payment cleared in Vivek Bank',
         resource: 'Broker obligation separate',
       };
     }
