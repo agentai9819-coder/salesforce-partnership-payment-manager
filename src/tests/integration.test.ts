@@ -649,14 +649,14 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
       }
     });
 
-    expect(vivekHoldsForAnurag).toBe(30000); // Rohit C1 ₹10,000 + Sai Aug ₹10,000 + Rohit C2 ₹10,000
+    expect(vivekHoldsForAnurag).toBe(33000); // Rohit C1 ₹10,000 + Sai Aug ₹10,000 + Rohit C2 ₹10,000 + Satish Oct C1 ₹3,000
     expect(anuragHoldsForVivek).toBe(37500); // Eshwar Aug ₹7,500 + Sai Sep ₹12,500 + Eshwar Sep ₹7,500 + Ganesh Sep ₹10,000
 
-    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // -7500 (Anurag owes Vivek ₹7,500)
-    expect(operationalDiff).toBe(-7500);
+    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // -4500 (Anurag owes Vivek ₹4,500)
+    expect(operationalDiff).toBe(-4500);
 
     const oldDebt = 500;
-    const finalTransfer = operationalDiff - oldDebt; // -8000
-    expect(finalTransfer).toBe(-8000);
+    const finalTransfer = operationalDiff - oldDebt; // -5000 (Anurag pays Vivek ₹5,000)
+    expect(finalTransfer).toBe(-5000);
   });
 });

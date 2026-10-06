@@ -26,8 +26,8 @@ interface DashboardPageProps {
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const { organizationId } = await requireAuthenticatedPartner();
 
-  // Default to Cycle 1 of September 2026
-  const currentPeriodKey = searchParams?.period || '2026-09-C1';
+  // Default to Cycle 1 of October 2026 (Current active cycle)
+  const currentPeriodKey = searchParams?.period || '2026-10-C1';
   const activePeriod = db.ensureBillingPeriod(organizationId, currentPeriodKey);
 
   const partners = db.getPartners(organizationId);
@@ -45,12 +45,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   // Period Tabs
   const periodTabs = [
-    { key: '2026-09-C1', label: 'Sep 1 – 15 (Current)' },
+    { key: '2026-10-C1', label: 'Oct 1 – 15 (Current)' },
+    { key: '2026-09-C2', label: 'Sep 16 – 30' },
+    { key: '2026-09-C1', label: 'Sep 1 – 15' },
+    { key: '2026-09', label: 'September Full Month' },
     { key: '2026-08-C2', label: 'Aug 16 – 31' },
     { key: '2026-08-C1', label: 'Aug 1 – 15 (Settled)' },
     { key: '2026-08', label: 'August Full Month' },
-    { key: '2026-09-C2', label: 'Sep 16 – 30' },
-    { key: '2026-09', label: 'September Full Month' },
   ];
 
   // Derive metrics strictly from authoritative records

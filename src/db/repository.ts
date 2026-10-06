@@ -866,6 +866,9 @@ export class DatabaseRepository {
     const periodSepC2Id = 'bp-2026-09-C2';
     const periodSepId = 'bp-2026-09';
 
+    const periodOctC1Id = 'bp-2026-10-C1';
+    const periodOctId = 'bp-2026-10';
+
     return {
       organizations: [
         {
@@ -936,6 +939,15 @@ export class DatabaseRepository {
           createdAt: '2026-09-01T00:00:00Z',
           updatedAt: '2026-10-02T00:00:00Z',
         },
+        {
+          id: 'client-satish',
+          organizationId: orgId,
+          name: 'Satish (Networking Support)',
+          status: 'ACTIVE',
+          defaultNote: 'Miscellaneous work: Satish Networking Interview Support (₹6,000 received by Vivek, 50-50 profit split)',
+          createdAt: '2026-10-01T00:00:00Z',
+          updatedAt: '2026-10-06T00:00:00Z',
+        },
       ],
       billingPeriods: [
         {
@@ -995,6 +1007,24 @@ export class DatabaseRepository {
           endDate: '2026-09-30',
           status: 'OPEN',
           createdAt: '2026-09-01T00:00:00Z',
+        },
+        {
+          id: periodOctC1Id,
+          organizationId: orgId,
+          periodKey: '2026-10-C1',
+          startDate: '2026-10-01',
+          endDate: '2026-10-15',
+          status: 'OPEN',
+          createdAt: '2026-10-01T00:00:00Z',
+        },
+        {
+          id: periodOctId,
+          organizationId: orgId,
+          periodKey: '2026-10',
+          startDate: '2026-10-01',
+          endDate: '2026-10-31',
+          status: 'OPEN',
+          createdAt: '2026-10-01T00:00:00Z',
         },
       ],
       clientBillingPlans: [
@@ -1202,6 +1232,28 @@ export class DatabaseRepository {
           updatedByPartnerId: anuragId,
           createdAt: '2026-09-01T00:00:00Z',
           updatedAt: '2026-09-01T00:00:00Z',
+        },
+        {
+          id: 'cbp-satish-oct-c1',
+          clientId: 'client-satish',
+          billingPeriodId: periodOctC1Id,
+          grossBillingAmount: '6000.00',
+          notes: 'Satish Networking Interview Support - ₹6,000 miscellaneous work',
+          createdByPartnerId: vivekId,
+          updatedByPartnerId: vivekId,
+          createdAt: '2026-10-01T00:00:00Z',
+          updatedAt: '2026-10-06T00:00:00Z',
+        },
+        {
+          id: 'cbp-satish-oct',
+          clientId: 'client-satish',
+          billingPeriodId: periodOctId,
+          grossBillingAmount: '6000.00',
+          notes: 'Satish Networking Interview Support - ₹6,000 miscellaneous work (October Full Month)',
+          createdByPartnerId: vivekId,
+          updatedByPartnerId: vivekId,
+          createdAt: '2026-10-01T00:00:00Z',
+          updatedAt: '2026-10-06T00:00:00Z',
         },
       ],
       clientPayments: [
@@ -1467,6 +1519,35 @@ export class DatabaseRepository {
           createdByPartnerId: vivekId,
           createdAt: '2026-09-30T10:00:00Z',
           updatedAt: '2026-09-30T10:00:00Z',
+        },
+        // Satish Networking Interview Support (Received by Vivek)
+        {
+          id: 'pay-oct-satish-c1',
+          billingPlanId: 'cbp-satish-oct-c1',
+          collectedByPartnerId: vivekId,
+          paymentDate: '2026-10-06',
+          amountReceived: '6000.00',
+          paymentReference: 'SATISH-OCT-C1',
+          status: 'CONFIRMED',
+          notes: 'Miscellaneous work: Satish networking interview support ₹6,000 received in Vivek account (50-50 split: Anurag ₹3,000, Vivek ₹3,000)',
+          idempotencyKey: 'idem-satish-oct-c1',
+          createdByPartnerId: vivekId,
+          createdAt: '2026-10-06T10:00:00Z',
+          updatedAt: '2026-10-06T10:00:00Z',
+        },
+        {
+          id: 'pay-oct-satish-full1',
+          billingPlanId: 'cbp-satish-oct',
+          collectedByPartnerId: vivekId,
+          paymentDate: '2026-10-06',
+          amountReceived: '6000.00',
+          paymentReference: 'SATISH-OCT-FULL1',
+          status: 'CONFIRMED',
+          notes: 'Miscellaneous work: Satish networking interview support ₹6,000 received in Vivek account (50-50 split: Anurag ₹3,000, Vivek ₹3,000)',
+          idempotencyKey: 'idem-satish-oct-full1',
+          createdByPartnerId: vivekId,
+          createdAt: '2026-10-06T10:00:00Z',
+          updatedAt: '2026-10-06T10:00:00Z',
         },
       ],
       externalParties: [
