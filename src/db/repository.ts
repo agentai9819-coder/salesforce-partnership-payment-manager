@@ -1783,6 +1783,19 @@ export class DatabaseRepository {
           createdAt: '2026-08-01T00:00:00Z',
           updatedAt: '2026-08-01T00:00:00Z',
         },
+        {
+          id: 'ba-vivek-transfer-5000',
+          organizationId: orgId,
+          fromPartnerId: anuragId,
+          toPartnerId: vivekId,
+          amount: '5000.00',
+          reason: 'Direct Cash Transfer: Vivek sent ₹5,000 to Anurag account (Anurag holds additional ₹5,000 of Vivek)',
+          effectiveBillingPeriodId: 'OVERALL',
+          status: 'APPLIED',
+          createdByPartnerId: anuragId,
+          createdAt: '2026-10-06T17:00:00Z',
+          updatedAt: '2026-10-06T17:00:00Z',
+        },
       ],
       settlementPeriods: [
         {

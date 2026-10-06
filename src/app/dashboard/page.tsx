@@ -171,9 +171,19 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // Operational cross-offset
   const masterOperationalDiff = totalVivekHoldsForAnurag - totalAnuragHoldsForVivek;
 
-  // Global one-time carry forward debt (Anurag owes Vivek ₹500)
-  const masterOldDebt = 500;
-  const masterFinalNetToAnurag = masterOperationalDiff - masterOldDebt;
+  // Dynamic Business Adjustments (Carry-Forward & Direct Partner Transfers)
+  const allAppliedAdjustments = db.getBusinessAdjustments('OVERALL').filter((a) => a.status === 'APPLIED');
+  let netAdjustmentToVivek = 0;
+  allAppliedAdjustments.forEach((adj) => {
+    const amt = Number(adj.amount);
+    if (adj.fromPartnerId === anurag.id && adj.toPartnerId === vivek.id) {
+      netAdjustmentToVivek += amt;
+    } else if (adj.fromPartnerId === vivek.id && adj.toPartnerId === anurag.id) {
+      netAdjustmentToVivek -= amt;
+    }
+  });
+
+  const masterFinalNetToAnurag = masterOperationalDiff - netAdjustmentToVivek;
   const isMasterVivekPays = masterFinalNetToAnurag > 0;
   const isMasterAnuragPays = masterFinalNetToAnurag < 0;
   const absFinalNet = Math.abs(masterFinalNetToAnurag);
@@ -309,10 +319,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 : '₹0 (Pura 50/50 barabar)'}
             </span>
           </div>
-          <div className="flex justify-between text-amber-500 font-medium">
-            <span>Minus Purana Udhaar (Anurag Vivek ko ₹500 dena hai):</span>
-            <span>&minus; ₹{masterOldDebt.toLocaleString('en-IN')}</span>
-          </div>
+          {allAppliedAdjustments.map((adj) => {
+            const amt = Number(adj.amount);
+            const isAnuragOwes = adj.fromPartnerId === anurag.id && adj.toPartnerId === vivek.id;
+            return (
+              <div key={adj.id} className="flex justify-between text-amber-500 font-medium text-xs">
+                <span>{adj.reason}:</span>
+                <span>{isAnuragOwes ? `\u2212 \u20B9${amt.toLocaleString('en-IN')}` : `+ \u20B9${amt.toLocaleString('en-IN')}`}</span>
+              </div>
+            );
+          })}
           <div className="flex justify-between font-black text-emerald-400 pt-2 border-t-2 border-emerald-500/30 text-sm">
             <span>&#128073; FINAL HISAAB (Asli Lena / Dena):</span>
             <span>

@@ -655,8 +655,19 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // -4500 (Anurag owes Vivek ₹4,500)
     expect(operationalDiff).toBe(-4500);
 
-    const oldDebt = 500;
-    const finalTransfer = operationalDiff - oldDebt; // -5000 (Anurag pays Vivek ₹5,000)
-    expect(finalTransfer).toBe(-5000);
+    const allAdjustments = db.getBusinessAdjustments('OVERALL').filter((a) => a.status === 'APPLIED');
+    let netAdjustmentToVivek = 0;
+    allAdjustments.forEach((adj) => {
+      const amt = Number(adj.amount);
+      if (adj.fromPartnerId === anuragId && adj.toPartnerId === vivekId) {
+        netAdjustmentToVivek += amt;
+      } else if (adj.fromPartnerId === vivekId && adj.toPartnerId === anuragId) {
+        netAdjustmentToVivek -= amt;
+      }
+    });
+    expect(netAdjustmentToVivek).toBe(5500); // Old debt ₹500 + Vivek cash transfer ₹5,000
+
+    const finalTransfer = operationalDiff - netAdjustmentToVivek; // -4500 - 5500 = -10000 (Anurag pays Vivek ₹10,000)
+    expect(finalTransfer).toBe(-10000);
   });
 });
