@@ -1,0 +1,52 @@
+# ====================================================================================================
+# SALESFORCE PARTNERSHIP FINANCIAL LEDGER - COMPLETE TALLY & RECONCILIATION
+# Generated Date: 2026-10-10
+# Partners: Anurag & Vivek (50% / 50% Equal Profit Sharing)
+# ====================================================================================================
+
+# ----------------------------------------------------------------------------------------------------
+# SECTION 1: ALL CLIENT PAYMENTS RECEIVED (AAYA HUA PAISA & 50/50 SHARE)
+# ----------------------------------------------------------------------------------------------------
+Type,Payment Date,Client Name,Cycle / Period,Payment Reference,Collected By Account,Gross Received (INR),Resource Expense (INR),Resource Name,Net Profit (INR),Anurag 50% Share (INR),Vivek 50% Share (INR),Who Holds Counterpart Share,Settlement Status,Notes
+Client Payment,2026-08-05,Sai,2026-08-C1 (Aug 1-15),SAI-AUG-1-15,Vivek,20000.00,0.00,-,20000.00,10000.00,10000.00,Vivek held Anurag share,SETTLED,"August Cycle 1 payment, settled 50/50 on 16 Aug"
+Client Payment,2026-08-05,Eshwar,2026-08-C1 (Aug 1-15),ESHWAR-AUG-C1,Anurag,25000.00,10000.00,Divyanshu,15000.00,7500.00,7500.00,Anurag held Vivek share,SETTLED,"August Cycle 1 payment, 10k dev disbursed by Anurag"
+Client Payment,2026-08-20,Eshwar,2026-08-C2 (Aug 16-31),ESHWAR-AUG-C2,Anurag,25000.00,10000.00,Divyanshu,15000.00,7500.00,7500.00,Anurag holds Vivek share,UNSETTLED,"Aug Cycle 2 payment, Anurag holds Vivek 7,500"
+Client Payment,2026-08-31,Sai,2026-08-C2 (Aug 16-31),SAI-AUG-C2,Vivek,20000.00,0.00,-,20000.00,10000.00,10000.00,Vivek holds Anurag share,UNSETTLED,"Aug Cycle 2 payment, Vivek holds Anurag 10,000"
+Client Payment,2026-09-05,Rohit,2026-09-C1 (Sep 1-15),ROHIT-SEP-C1,Vivek,20000.00,0.00,-,20000.00,10000.00,10000.00,Vivek holds Anurag share,UNSETTLED,"Sep Cycle 1 payment, Vivek holds Anurag 10,000"
+Client Payment,2026-09-11,Sai,2026-09-C1 (Sep 1-15),SAI-SEP-C1,Anurag,25000.00,0.00,-,25000.00,12500.00,12500.00,Anurag holds Vivek share,UNSETTLED,"Sep Cycle 1 payment, Anurag holds Vivek 12,500"
+Client Payment,2026-09-16,Eshwar,2026-09-C1 (Sep 1-15),ESHWAR-SEP-C1,Anurag,25000.00,10000.00,Divyanshu,15000.00,7500.00,7500.00,Anurag holds Vivek share,UNSETTLED,"Sep Cycle 1 last payment before hold, Anurag holds Vivek 7,500"
+Client Payment,2026-09-30,Ganesh,2026-09-C2 (Sep 16-30),GANESH-SEP-C2,Anurag,60000.00,40000.00,Monika,20000.00,10000.00,10000.00,Anurag holds Vivek share,UNSETTLED,"Sep payment 60k, 40k Monika paid by Anurag, Anurag holds Vivek 10,000"
+Client Payment,2026-09-30,Rohit,2026-09-C2 (Sep 16-30),ROHIT-SEP-C2,Vivek,20000.00,0.00,-,20000.00,10000.00,10000.00,Vivek holds Anurag share,UNSETTLED,"Sep Cycle 2 payment, Vivek holds Anurag 10,000"
+Client Payment,2026-10-06,Satish,2026-10-C1 (Oct 1-15),SATISH-OCT-C1,Vivek,6000.00,0.00,-,6000.00,3000.00,3000.00,Vivek holds Anurag share,UNSETTLED,"Networking Interview Support 6k, Vivek holds Anurag 3,000"
+
+# ----------------------------------------------------------------------------------------------------
+# SECTION 2: ALL EXTERNAL RESOURCE DISBURSEMENTS (RESOURCE KHARCHA JO DIYA GAYA)
+# ----------------------------------------------------------------------------------------------------
+Type,Disbursement Date,Client Project,Resource / Vendor Name,Paid By Partner,Amount Paid (INR),Cycle / Period,Notes
+Resource Expense,2026-08-05,Eshwar,Divyanshu,Anurag,10000.00,2026-08-C1,"August Cycle 1 dev cost paid by Anurag"
+Resource Expense,2026-08-20,Eshwar,Divyanshu,Anurag,10000.00,2026-08-C2,"August Cycle 2 dev cost paid by Anurag"
+Resource Expense,2026-09-16,Eshwar,Divyanshu,Anurag,10000.00,2026-09-C1,"September Cycle 1 dev cost paid by Anurag"
+Resource Expense,2026-09-30,Ganesh,Monika,Anurag,40000.00,2026-09-C2,"Monika resource cost for Ganesh project paid by Anurag"
+
+# ----------------------------------------------------------------------------------------------------
+# SECTION 3: DIRECT PARTNER-TO-PARTNER TRANSFERS & BUSINESS ADJUSTMENTS
+# ----------------------------------------------------------------------------------------------------
+Type,Date,From Partner,To Partner,Amount (INR),Reason,Impact on Final Settlement
+Carry-Forward Debt,2026-08-01,Anurag,Vivek,500.00,"Old business/work balance carry-forward (Purana udhaar)","Anurag owes Vivek +500.00"
+Direct Partner Transfer,2026-10-06,Vivek,Anurag,5000.00,"Direct cash transfer: Vivek sent 5,000 INR into Anurag account","Anurag holds additional +5000.00 of Vivek"
+
+# ----------------------------------------------------------------------------------------------------
+# SECTION 4: UNSETTLED ACTIVE CASH HELD SUMMARY (HISAAB SUMMARY)
+# ----------------------------------------------------------------------------------------------------
+Partner,Item,Breakdown / Calculation,Amount Held for Partner (INR)
+Vivek,Cash Held for Anurag,"Sai Aug (10,000) + Rohit Sep C1 (10,000) + Rohit Sep C2 (10,000) + Satish Oct (3,000)",33000.00
+Anurag,Cash Held for Vivek,"Eshwar Aug (7,500) + Sai Sep (12,500) + Eshwar Sep (7,500) + Ganesh Sep (10,000)",37500.00
+
+# ----------------------------------------------------------------------------------------------------
+# SECTION 5: FINAL RECONCILIATION & TALLY CALCULATION
+# ----------------------------------------------------------------------------------------------------
+Component,Calculation Formula,Result (INR),Direction
+1. Kaam ka Antar (Operations Net),Vivek holds (33,000) - Anurag holds (37,500),-4500.00,Anurag owes Vivek 4500.00
+2. Purana Udhaar (Carry Forward),Old balance carry forward,-500.00,Anurag owes Vivek 500.00
+3. Vivek Direct Transfer,Vivek transferred cash to Anurag account,-5000.00,Anurag owes Vivek 5000.00
+FINAL NET SETTLEMENT,Sum of all three components (4500 + 500 + 5000),-10000.00,ANURAG PAYS VIVEK 10000.00
