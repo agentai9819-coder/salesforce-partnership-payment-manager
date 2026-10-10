@@ -18,6 +18,7 @@ Client Payment,2026-09-16,Eshwar,2026-09-C1 (Sep 1-15),ESHWAR-SEP-C1,Anurag,2500
 Client Payment,2026-09-30,Ganesh,2026-09-C2 (Sep 16-30),GANESH-SEP-C2,Anurag,60000.00,40000.00,Monika,20000.00,10000.00,10000.00,Anurag holds Vivek share,UNSETTLED,"Sep payment 60k, 40k Monika paid by Anurag, Anurag holds Vivek 10,000"
 Client Payment,2026-09-30,Rohit,2026-09-C2 (Sep 16-30),ROHIT-SEP-C2,Vivek,20000.00,0.00,-,20000.00,10000.00,10000.00,Vivek holds Anurag share,UNSETTLED,"Sep Cycle 2 payment, Vivek holds Anurag 10,000"
 Client Payment,2026-10-06,Satish,2026-10-C1 (Oct 1-15),SATISH-OCT-C1,Vivek,6000.00,0.00,-,6000.00,3000.00,3000.00,Vivek holds Anurag share,UNSETTLED,"Networking Interview Support 6k, Vivek holds Anurag 3,000"
+Client Payment,2026-10-10,Sai,2026-09-C2 (Sep 16-30),SAI-SEP-C2,Anurag,25000.00,0.00,-,25000.00,12500.00,12500.00,Anurag holds Vivek share,UNSETTLED,"Sep Cycle 2 payment 25k received by Anurag on 10 Oct, Anurag holds Vivek 12,500"
 
 # ----------------------------------------------------------------------------------------------------
 # SECTION 2: ALL EXTERNAL RESOURCE DISBURSEMENTS (RESOURCE KHARCHA JO DIYA GAYA)
@@ -40,13 +41,13 @@ Direct Partner Transfer,2026-10-06,Vivek,Anurag,5000.00,"Direct cash transfer: V
 # ----------------------------------------------------------------------------------------------------
 Partner,Item,Breakdown / Calculation,Amount Held for Partner (INR)
 Vivek,Cash Held for Anurag,"Sai Aug (10,000) + Rohit Sep C1 (10,000) + Rohit Sep C2 (10,000) + Satish Oct (3,000)",33000.00
-Anurag,Cash Held for Vivek,"Eshwar Aug (7,500) + Sai Sep (12,500) + Eshwar Sep (7,500) + Ganesh Sep (10,000)",37500.00
+Anurag,Cash Held for Vivek,"Eshwar Aug (7,500) + Sai Sep C1 (12,500) + Eshwar Sep C1 (7,500) + Ganesh Sep C2 (10,000) + Sai Sep C2 (12,500)",50000.00
 
 # ----------------------------------------------------------------------------------------------------
 # SECTION 5: FINAL RECONCILIATION & TALLY CALCULATION
 # ----------------------------------------------------------------------------------------------------
 Component,Calculation Formula,Result (INR),Direction
-1. Kaam ka Antar (Operations Net),Vivek holds (33,000) - Anurag holds (37,500),-4500.00,Anurag owes Vivek 4500.00
+1. Kaam ka Antar (Operations Net),Vivek holds (33,000) - Anurag holds (50,000),-17000.00,Anurag owes Vivek 17000.00
 2. Purana Udhaar (Carry Forward),Old balance carry forward,-500.00,Anurag owes Vivek 500.00
 3. Vivek Direct Transfer,Vivek transferred cash to Anurag account,-5000.00,Anurag owes Vivek 5000.00
-FINAL NET SETTLEMENT,Sum of all three components (4500 + 500 + 5000),-10000.00,ANURAG PAYS VIVEK 10000.00
+FINAL NET SETTLEMENT,Sum of all three components (17000 + 500 + 5000),-22500.00,ANURAG PAYS VIVEK 22500.00
