@@ -17,6 +17,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { WhatsAppPartnerCard } from '@/components/whatsapp/WhatsAppPartnerCard';
+import { ENABLE_WHATSAPP_DISPATCH } from '@/server/constants';
 
 interface DashboardPageProps {
   searchParams?: {
@@ -344,8 +345,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
       </div>
 
-      {/* 1.1 WHATSAPP PARTNER CARD DISPATCH (EXCLUSIVELY FOR ANURAG - NEVER RENDERED FOR VIVEK) */}
-      {isAnurag && (
+      {/* 1.1 WHATSAPP PARTNER CARD DISPATCH (CURRENTLY OFF PER USER REQUEST) */}
+      {ENABLE_WHATSAPP_DISPATCH && isAnurag && (
         <WhatsAppPartnerCard
           isAnurag={isAnurag}
           netSettlementSentence={masterSentence}

@@ -29,3 +29,6 @@ export const DEFAULT_VIVEK_PASSWORD = 'Vivek@2026';
 // Vivek's official WhatsApp number
 export const VIVEK_WHATSAPP_NUMBER = '919932381467';
 
+// WhatsApp Feature Flag (Currently disabled per user request)
+export const ENABLE_WHATSAPP_DISPATCH = process.env.ENABLE_WHATSAPP === 'true';
+

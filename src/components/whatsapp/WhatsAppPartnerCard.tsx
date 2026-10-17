@@ -13,7 +13,7 @@ import {
   Sparkles,
   Smartphone,
 } from 'lucide-react';
-import { VIVEK_WHATSAPP_NUMBER } from '@/server/constants';
+import { VIVEK_WHATSAPP_NUMBER, ENABLE_WHATSAPP_DISPATCH } from '@/server/constants';
 
 interface WhatsAppPartnerCardProps {
   isAnurag: boolean;
@@ -39,8 +39,8 @@ export function WhatsAppPartnerCard({
   totalAnuragHoldsForVivek,
   recentPayments = [],
 }: WhatsAppPartnerCardProps) {
-  // CRITICAL PRIVACY GUARD: Never render anything for Vivek
-  if (!isAnurag) {
+  // Check feature flag & partner role: Off by default per user instruction
+  if (!ENABLE_WHATSAPP_DISPATCH || !isAnurag) {
     return null;
   }
 
