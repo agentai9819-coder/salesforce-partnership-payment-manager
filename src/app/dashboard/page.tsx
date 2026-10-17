@@ -16,6 +16,7 @@ import {
   ArrowRight,
   UserCheck,
 } from 'lucide-react';
+import { WhatsAppPartnerCard } from '@/components/whatsapp/WhatsAppPartnerCard';
 
 interface DashboardPageProps {
   searchParams?: {
@@ -24,7 +25,8 @@ interface DashboardPageProps {
 }
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const { organizationId } = await requireAuthenticatedPartner();
+  const { partner: currentPartner, organizationId } = await requireAuthenticatedPartner();
+  const isAnurag = currentPartner?.partnerCode === 'ANURAG';
 
   // Default to Cycle 1 of October 2026 (Current active cycle)
   const currentPeriodKey = searchParams?.period || '2026-10-C1';
@@ -341,6 +343,18 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </div>
         </div>
       </div>
+
+      {/* 1.1 WHATSAPP PARTNER CARD DISPATCH (EXCLUSIVELY FOR ANURAG - NEVER RENDERED FOR VIVEK) */}
+      {isAnurag && (
+        <WhatsAppPartnerCard
+          isAnurag={isAnurag}
+          netSettlementSentence={masterSentence}
+          absFinalNet={absFinalNet}
+          totalVivekHoldsForAnurag={totalVivekHoldsForAnurag}
+          totalAnuragHoldsForVivek={totalAnuragHoldsForVivek}
+          recentPayments={unsettledItems.slice().reverse()}
+        />
+      )}
 
       {/* 2. ONE-CLICK PERIOD FILTER TABS */}
       <div className="bg-card p-3 rounded-2xl border border-border shadow-xs">

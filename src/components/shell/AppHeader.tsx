@@ -34,45 +34,12 @@ export async function AppHeader() {
         <div className="flex items-center gap-3">
           {currentPartner ? (
             <>
-              {isDev ? (
-                /* Development-Only Partner Switcher */
-                <div className="flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/5 p-1 text-xs">
-                  <span className="hidden sm:inline px-2 font-bold text-[10px] text-warning uppercase">
-                    DEV SWITCH:
-                  </span>
-                  <form action={async () => { 'use server'; await switchPartnerAction('ANURAG'); }} className="inline">
-                    <button
-                      type="submit"
-                      className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
-                        currentPartner.partnerCode === 'ANURAG'
-                          ? 'bg-accent text-accent-foreground shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      Anurag
-                    </button>
-                  </form>
-                  <form action={async () => { 'use server'; await switchPartnerAction('VIVEK'); }} className="inline">
-                    <button
-                      type="submit"
-                      className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
-                        currentPartner.partnerCode === 'VIVEK'
-                          ? 'bg-accent text-accent-foreground shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      Vivek
-                    </button>
-                  </form>
-                </div>
-              ) : (
-                /* Production: Immutable Authenticated Partner Identity */
-                <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-1.5 text-xs font-bold text-foreground">
-                  <span className="h-2 w-2 rounded-full bg-success"></span>
-                  <span>{currentPartner.fullName}</span>
-                  <span className="text-muted-foreground font-normal">({currentPartner.profitSharePercentage}%)</span>
-                </div>
-              )}
+              {/* Authenticated Partner Identity */}
+              <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-1.5 text-xs font-bold text-foreground">
+                <span className="h-2 w-2 rounded-full bg-success"></span>
+                <span>{currentPartner.fullName}</span>
+                <span className="text-muted-foreground font-normal">({currentPartner.profitSharePercentage}%)</span>
+              </div>
 
               <Link
                 href="/settings"

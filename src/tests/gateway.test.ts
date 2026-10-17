@@ -19,7 +19,11 @@ vi.mock('next/cache', () => ({
 }));
 
 import { verifyGatewayPasscodeAction, lockGatewayAction, loginAction } from '@/server/actions/auth';
-import { DEFAULT_GATEWAY_PASSCODE, GATEWAY_COOKIE_NAME } from '@/server/constants';
+import {
+  DEFAULT_GATEWAY_PASSCODE,
+  GATEWAY_COOKIE_NAME,
+  DEFAULT_ANURAG_PASSWORD,
+} from '@/server/constants';
 
 describe('Front Door Security Gateway Action Tests', () => {
   beforeEach(() => {
@@ -61,7 +65,7 @@ describe('Front Door Security Gateway Action Tests', () => {
     vi.stubEnv('NODE_ENV', 'production');
     delete mockCookieStore[GATEWAY_COOKIE_NAME];
 
-    const res = await loginAction('ANURAG');
+    const res = await loginAction('ANURAG', DEFAULT_ANURAG_PASSWORD);
     expect(res.success).toBe(false);
     expect(res.error?.code).toBe('UNAUTHORIZED');
     expect(res.error?.message).toContain('Security Gateway is locked');
@@ -73,7 +77,7 @@ describe('Front Door Security Gateway Action Tests', () => {
     vi.stubEnv('NODE_ENV', 'production');
     mockCookieStore[GATEWAY_COOKIE_NAME] = { value: 'unlocked' };
 
-    const res = await loginAction('ANURAG');
+    const res = await loginAction('ANURAG', DEFAULT_ANURAG_PASSWORD);
     expect(res.success).toBe(true);
     expect(res.data).toBeDefined();
 

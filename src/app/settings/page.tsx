@@ -52,31 +52,10 @@ export default async function SettingsPage() {
               </div>
             </div>
 
-            {isDev ? (
-              <div className="space-y-2">
-                <span className="font-semibold text-warning text-xs flex items-center gap-1.5">
-                  Development Partner Switcher:
-                </span>
-                <div className="flex gap-2">
-                  {partners.map((p) => (
-                    <form key={p.id} action={async () => { 'use server'; await switchPartnerAction(p.partnerCode); }} className="flex-1">
-                      <Button
-                        type="submit"
-                        variant={currentPartner.id === p.id ? 'primary' : 'outline'}
-                        className="w-full text-xs"
-                      >
-                        Switch to {p.fullName}
-                      </Button>
-                    </form>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-lg bg-muted/50 p-2.5 text-muted-foreground text-[11px] flex items-center gap-2">
-                <Lock className="h-3.5 w-3.5 text-accent" />
-                <span>Session locked to authenticated identity. Partner switching is disabled in production.</span>
-              </div>
-            )}
+            <div className="rounded-lg bg-muted/50 p-3 text-muted-foreground text-[11px] flex items-center gap-2.5 border border-border">
+              <Lock className="h-4 w-4 text-accent shrink-0" />
+              <span>Each partner session is strictly protected by individual credentials. To switch between Anurag and Vivek, log out and enter the partner password.</span>
+            </div>
           </CardContent>
         </Card>
 

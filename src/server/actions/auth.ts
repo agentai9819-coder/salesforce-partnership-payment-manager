@@ -4,10 +4,19 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db/repository';
 import { SESSION_COOKIE_NAME } from '@/server/auth';
-import { GATEWAY_COOKIE_NAME, DEFAULT_GATEWAY_PASSCODE } from '@/server/constants';
+import {
+  GATEWAY_COOKIE_NAME,
+  DEFAULT_GATEWAY_PASSCODE,
+  DEFAULT_ANURAG_PASSWORD,
+  DEFAULT_VIVEK_PASSWORD,
+  HISTORICAL_COOKIE_NAMES,
+} from '@/server/constants';
 import { ActionResult } from '@/server/boundaries';
 
-export async function loginAction(partnerCode: 'ANURAG' | 'VIVEK'): Promise<ActionResult> {
+export async function loginAction(
+  partnerCode: 'ANURAG' | 'VIVEK',
+  password?: string
+): Promise<ActionResult> {
   try {
     // Defense-in-depth: Ensure the Front Door Security Gateway has been unlocked
     const gatewayCookie = cookies().get(GATEWAY_COOKIE_NAME);
@@ -27,6 +36,22 @@ export async function loginAction(partnerCode: 'ANURAG' | 'VIVEK'): Promise<Acti
       return {
         success: false,
         error: { code: 'UNAUTHORIZED', message: `Partner ${partnerCode} is inactive or not found` },
+      };
+    }
+
+    // Individual Partner Password Verification
+    const expectedPassword =
+      partnerCode === 'ANURAG'
+        ? process.env.ANURAG_PASSWORD || DEFAULT_ANURAG_PASSWORD
+        : process.env.VIVEK_PASSWORD || DEFAULT_VIVEK_PASSWORD;
+
+    if (!password || password.trim() !== expectedPassword.trim()) {
+      return {
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: `Incorrect password for ${partner.fullName}. Please enter your valid partner password.`,
+        },
       };
     }
 
@@ -88,16 +113,29 @@ export async function switchPartnerAction(partnerCode: 'ANURAG' | 'VIVEK'): Prom
 }
 
 export async function logoutAction(): Promise<ActionResult> {
-  // Explicitly invalidate session with immediate expiration
-  cookies().set(SESSION_COOKIE_NAME, '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 0,
-    expires: new Date(0),
-  });
-  cookies().delete(SESSION_COOKIE_NAME);
+  const cookieStore = cookies();
+  const cookiesToPurge = [
+    SESSION_COOKIE_NAME,
+    GATEWAY_COOKIE_NAME,
+    ...HISTORICAL_COOKIE_NAMES,
+  ];
+
+  for (const name of cookiesToPurge) {
+    try {
+      cookieStore.set(name, '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 0,
+        expires: new Date(0),
+      });
+      cookieStore.delete(name);
+    } catch {
+      // Continue purging remaining cookies
+    }
+  }
+
   revalidatePath('/');
   return { success: true };
 }
@@ -154,15 +192,29 @@ export async function verifyGatewayPasscodeAction(passcode: string): Promise<Act
 }
 
 export async function lockGatewayAction(): Promise<ActionResult> {
-  cookies().set(GATEWAY_COOKIE_NAME, '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 0,
-    expires: new Date(0),
-  });
-  cookies().delete(GATEWAY_COOKIE_NAME);
+  const cookieStore = cookies();
+  const cookiesToPurge = [
+    SESSION_COOKIE_NAME,
+    GATEWAY_COOKIE_NAME,
+    ...HISTORICAL_COOKIE_NAMES,
+  ];
+
+  for (const name of cookiesToPurge) {
+    try {
+      cookieStore.set(name, '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 0,
+        expires: new Date(0),
+      });
+      cookieStore.delete(name);
+    } catch {
+      // Continue purging remaining cookies
+    }
+  }
+
   revalidatePath('/login');
   return { success: true };
 }

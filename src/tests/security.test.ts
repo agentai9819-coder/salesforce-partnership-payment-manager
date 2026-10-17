@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DatabaseRepository } from '@/db/repository';
-import { SESSION_COOKIE_NAME, VALID_PARTNER_IDS, GATEWAY_COOKIE_NAME } from '@/server/constants';
+import {
+  SESSION_COOKIE_NAME,
+  VALID_PARTNER_IDS,
+  GATEWAY_COOKIE_NAME,
+  DEFAULT_ANURAG_PASSWORD,
+  DEFAULT_VIVEK_PASSWORD,
+} from '@/server/constants';
 import { loginAction, logoutAction } from '@/server/actions/auth';
 import { getSupabaseSecretKey, getSupabasePublishableKey, isSupabaseConfigured } from '@/db/supabase';
 
@@ -202,8 +208,19 @@ describe('Security, Authorization & Multi-Tenant Boundaries', () => {
   });
 
   describe('Session Cookie Security & Auth Enforcements', () => {
+    it('MUST reject login if partner password is missing or incorrect', async () => {
+      const emptyRes = await loginAction('ANURAG', '');
+      expect(emptyRes.success).toBe(false);
+      expect(emptyRes.error?.code).toBe('UNAUTHORIZED');
+
+      const wrongRes = await loginAction('ANURAG', 'WrongPass@123');
+      expect(wrongRes.success).toBe(false);
+      expect(wrongRes.error?.code).toBe('UNAUTHORIZED');
+      expect(wrongRes.error?.message).toContain('Incorrect password');
+    });
+
     it('MUST set HttpOnly, Lax, 30-day expiry, and root path on login', async () => {
-      const result = await loginAction('ANURAG');
+      const result = await loginAction('ANURAG', DEFAULT_ANURAG_PASSWORD);
       expect(result.success).toBe(true);
 
       const cookie = mockCookieStore[SESSION_COOKIE_NAME];
@@ -220,7 +237,7 @@ describe('Security, Authorization & Multi-Tenant Boundaries', () => {
       vi.stubEnv('NODE_ENV', 'production');
       mockCookieStore[GATEWAY_COOKIE_NAME] = { value: 'unlocked' };
 
-      const result = await loginAction('VIVEK');
+      const result = await loginAction('VIVEK', DEFAULT_VIVEK_PASSWORD);
       expect(result.success).toBe(true);
 
       const cookie = mockCookieStore[SESSION_COOKIE_NAME];
@@ -231,7 +248,7 @@ describe('Security, Authorization & Multi-Tenant Boundaries', () => {
 
     it('MUST completely invalidate and purge the session cookie on logout', async () => {
       // First login
-      await loginAction('ANURAG');
+      await loginAction('ANURAG', DEFAULT_ANURAG_PASSWORD);
       expect(mockCookieStore[SESSION_COOKIE_NAME]).toBeDefined();
 
       // Logout

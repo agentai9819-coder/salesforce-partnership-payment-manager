@@ -8,6 +8,7 @@ import {
   Unlock,
   ShieldCheck,
   ArrowRight,
+  ArrowLeft,
   KeyRound,
   Eye,
   EyeOff,
@@ -28,8 +29,14 @@ export function DoorGateway({ partners, isInitiallyUnlocked }: DoorGatewayProps)
   const [isUnlocked, setIsUnlocked] = useState(isInitiallyUnlocked);
   const [isDoorOpen, setIsDoorOpen] = useState(isInitiallyUnlocked);
   const [isPending, startTransition] = useTransition();
-  const [loggingInCode, setLoggingInCode] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
+
+  // Individual Partner Password State
+  const [selectedPartnerCode, setSelectedPartnerCode] = useState<'ANURAG' | 'VIVEK' | null>(null);
+  const [partnerPassword, setPartnerPassword] = useState('');
+  const [showPartnerPassword, setShowPartnerPassword] = useState(false);
+  const [partnerError, setPartnerError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +71,9 @@ export function DoorGateway({ partners, isInitiallyUnlocked }: DoorGatewayProps)
 
   const handleLock = () => {
     setIsDoorOpen(false);
+    setSelectedPartnerCode(null);
+    setPartnerPassword('');
+    setPartnerError(null);
     setTimeout(() => {
       setIsUnlocked(false);
       setPasscode('');
@@ -74,18 +84,30 @@ export function DoorGateway({ partners, isInitiallyUnlocked }: DoorGatewayProps)
     }, 400);
   };
 
-  const handlePartnerSelect = (code: 'ANURAG' | 'VIVEK') => {
-    setLoggingInCode(code);
+  const handlePartnerPasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPartnerCode) return;
+
+    if (!partnerPassword.trim()) {
+      setPartnerError('Please enter your partner password');
+      return;
+    }
+
+    setPartnerError(null);
+    setIsLoggingIn(true);
+
     startTransition(async () => {
-      const res = await loginAction(code);
+      const res = await loginAction(selectedPartnerCode, partnerPassword.trim());
       if (res.success) {
         window.location.href = '/dashboard';
       } else {
-        setError(res.error?.message || 'Login failed');
-        setLoggingInCode(null);
+        setPartnerError(res.error?.message || 'Authentication failed. Please check your password.');
+        setIsLoggingIn(false);
       }
     });
   };
+
+  const selectedPartner = partners.find((p) => p.partnerCode === selectedPartnerCode);
 
   return (
     <div className="relative w-full min-h-screen flex flex-col items-center justify-center p-3 sm:p-6 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black select-none">
@@ -155,51 +177,145 @@ export function DoorGateway({ partners, isInitiallyUnlocked }: DoorGatewayProps)
             </div>
 
             <div className="mt-5 space-y-4 max-w-md mx-auto w-full text-xs">
-              <div className="flex items-center gap-2.5 rounded-xl bg-indigo-950/60 border border-indigo-500/40 p-3.5 text-indigo-200">
-                <ShieldCheck className="h-5 w-5 shrink-0 text-indigo-400" />
-                <span>
-                  Access Granted. Select your partner profile below to sign in directly:
-                </span>
-              </div>
-
-              {error && (
-                <div className="flex items-center gap-2 rounded-xl bg-red-950/60 border border-red-500/50 p-3 text-red-300 text-xs">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              <div className="space-y-3 pt-2">
-                {partners.map((p) => {
-                  const isLoggingIn = loggingInCode === p.partnerCode;
-                  return (
+              {selectedPartnerCode && selectedPartner ? (
+                /* PARTNER PASSWORD VERIFICATION SCREEN */
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                     <button
-                      key={p.id}
-                      onClick={() => handlePartnerSelect(p.partnerCode as 'ANURAG' | 'VIVEK')}
-                      disabled={loggingInCode !== null}
-                      className="w-full text-left p-4 rounded-xl border border-slate-700/80 bg-slate-900 hover:bg-slate-800 hover:border-indigo-500 transition-all duration-200 flex items-center justify-between group shadow-lg hover:shadow-indigo-500/10 cursor-pointer disabled:opacity-50"
+                      type="button"
+                      onClick={() => {
+                        setSelectedPartnerCode(null);
+                        setPartnerPassword('');
+                        setPartnerError(null);
+                      }}
+                      className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors cursor-pointer"
                     >
-                      <div>
-                        <div className="font-bold text-slate-100 text-base group-hover:text-indigo-300 transition-colors">
-                          {p.fullName}
-                        </div>
-                        <div className="text-slate-400 text-xs mt-0.5">
-                          {p.email} &bull; <span className="text-indigo-400 font-semibold">50% Profit Share</span>
-                        </div>
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      <span>Back to Profiles</span>
+                    </button>
+                    <span className="font-mono text-[10px] text-slate-500 uppercase tracking-wider">
+                      Protected Login
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl border border-indigo-500/30 bg-indigo-950/40 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-sm shadow-md shrink-0">
+                      {selectedPartner.partnerCode === 'ANURAG' ? 'AT' : 'VT'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-white truncate">{selectedPartner.fullName}</div>
+                      <div className="text-[11px] text-slate-400 truncate">
+                        {selectedPartner.email} &bull; <span className="text-indigo-400 font-medium">50% Partner</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {isLoggingIn ? (
-                          <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />
-                        ) : (
+                    </div>
+                  </div>
+
+                  {partnerError && (
+                    <div className="flex items-center gap-2 rounded-xl bg-red-950/60 border border-red-500/50 p-3 text-red-300 text-xs">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>{partnerError}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handlePartnerPasswordSubmit} className="space-y-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
+                        <span>Password for {selectedPartner.fullName}:</span>
+                        <span className="text-[10px] text-slate-500 font-mono">Confidential</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                          <KeyRound className="h-4 w-4" />
+                        </div>
+                        <input
+                          type={showPartnerPassword ? 'text' : 'password'}
+                          value={partnerPassword}
+                          onChange={(e) => setPartnerPassword(e.target.value)}
+                          placeholder={`Enter ${selectedPartner.partnerCode === 'ANURAG' ? 'Anurag' : 'Vivek'}'s password...`}
+                          disabled={isLoggingIn}
+                          autoFocus
+                          className="w-full bg-slate-900 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl py-2.5 pl-9 pr-10 text-sm text-white placeholder-slate-500 outline-none transition-all font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPartnerPassword(!showPartnerPassword)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white"
+                          tabIndex={-1}
+                        >
+                          {showPartnerPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoggingIn}
+                      className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl font-semibold text-xs tracking-wide uppercase transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isLoggingIn ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Verifying Identity...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-4 h-4" />
+                          <span>Enter {selectedPartner.partnerCode === 'ANURAG' ? "Anurag's" : "Vivek's"} Portal</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                /* PARTNER SELECTION LIST */
+                <>
+                  <div className="flex items-center gap-2.5 rounded-xl bg-indigo-950/60 border border-indigo-500/40 p-3.5 text-indigo-200">
+                    <ShieldCheck className="h-5 w-5 shrink-0 text-indigo-400" />
+                    <span>
+                      Access Granted. Select your partner profile to enter your individual password:
+                    </span>
+                  </div>
+
+                  {error && (
+                    <div className="flex items-center gap-2 rounded-xl bg-red-950/60 border border-red-500/50 p-3 text-red-300 text-xs">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-3 pt-2">
+                    {partners.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPartnerCode(p.partnerCode as 'ANURAG' | 'VIVEK');
+                          setPartnerPassword('');
+                          setPartnerError(null);
+                        }}
+                        className="w-full text-left p-4 rounded-xl border border-slate-700/80 bg-slate-900 hover:bg-slate-800 hover:border-indigo-500 transition-all duration-200 flex items-center justify-between group shadow-lg hover:shadow-indigo-500/10 cursor-pointer"
+                      >
+                        <div>
+                          <div className="font-bold text-slate-100 text-base group-hover:text-indigo-300 transition-colors">
+                            {p.fullName}
+                          </div>
+                          <div className="text-slate-400 text-xs mt-0.5">
+                            {p.email} &bull; <span className="text-indigo-400 font-semibold">50% Profit Share</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-slate-400 group-hover:text-indigo-300 font-medium hidden sm:inline">
+                            Enter Password
+                          </span>
                           <div className="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-indigo-600 transition-colors">
                             <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-white transition-colors" />
                           </div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <div className="border-t border-slate-800/80 pt-4 text-center text-[11px] text-slate-500 font-mono">
                 Cryptographic session established via HTTP-only partitioned cookies.
