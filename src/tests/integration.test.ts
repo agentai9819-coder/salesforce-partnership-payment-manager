@@ -650,10 +650,10 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     });
 
     expect(vivekHoldsForAnurag).toBe(53000); // Rohit C1 ₹10,000 + Sai Aug ₹10,000 + Rohit C2 ₹10,000 + Satish Oct C1 ₹3,000 + Rohit Oct C1 ₹20,000
-    expect(anuragHoldsForVivek).toBe(50000); // Eshwar Aug ₹7,500 + Sai Sep C1 ₹12,500 + Eshwar Sep ₹7,500 + Ganesh Sep ₹10,000 + Sai Sep C2 ₹12,500
+    expect(anuragHoldsForVivek).toBe(67500); // Eshwar Aug ₹7.5k + Sai Sep C1 ₹12.5k + Eshwar Sep ₹7.5k + Ganesh Sep ₹10k + Sai Sep C2 ₹12.5k + Sai Oct C1 ₹12.5k + Ganesh Oct C1 ₹5k
 
-    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // +3000 (Vivek owes Anurag ₹3,000 operational)
-    expect(operationalDiff).toBe(3000);
+    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // -14500 (Anurag owes Vivek ₹14,500 operational)
+    expect(operationalDiff).toBe(-14500);
 
     const allAdjustments = db.getBusinessAdjustments('OVERALL').filter((a) => a.status === 'APPLIED');
     let netAdjustmentToVivek = 0;
@@ -667,7 +667,7 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     });
     expect(netAdjustmentToVivek).toBe(5500); // Old debt ₹500 + Vivek cash transfer ₹5,000
 
-    const finalTransfer = operationalDiff - netAdjustmentToVivek; // 3000 - 5500 = -2500 (Anurag pays Vivek ₹2,500)
-    expect(finalTransfer).toBe(-2500);
+    const finalTransfer = operationalDiff - netAdjustmentToVivek; // -14500 - 5500 = -20000 (Anurag pays Vivek ₹20,000)
+    expect(finalTransfer).toBe(-20000);
   });
 });
