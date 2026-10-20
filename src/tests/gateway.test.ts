@@ -61,26 +61,17 @@ describe('Front Door Security Gateway Action Tests', () => {
     expect(mockCookieStore[GATEWAY_COOKIE_NAME]).toBeUndefined();
   });
 
-  it('rejects partner login if gateway is locked in production mode', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    delete mockCookieStore[GATEWAY_COOKIE_NAME];
-
-    const res = await loginAction('ANURAG', DEFAULT_ANURAG_PASSWORD);
+  it('rejects partner login with incorrect password', async () => {
+    const res = await loginAction('ANURAG', 'wrong_password_123');
     expect(res.success).toBe(false);
     expect(res.error?.code).toBe('UNAUTHORIZED');
-    expect(res.error?.message).toContain('Security Gateway is locked');
-
-    vi.unstubAllEnvs();
+    expect(res.error?.message).toContain('Incorrect password for Anurag');
   });
 
-  it('allows partner login if gateway is unlocked in production mode', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    mockCookieStore[GATEWAY_COOKIE_NAME] = { value: 'unlocked' };
-
+  it('allows partner login directly with valid user-based passcode and sets session and gateway cookies', async () => {
     const res = await loginAction('ANURAG', DEFAULT_ANURAG_PASSWORD);
     expect(res.success).toBe(true);
     expect(res.data).toBeDefined();
-
-    vi.unstubAllEnvs();
+    expect(mockCookieStore[GATEWAY_COOKIE_NAME]?.value).toBe('unlocked');
   });
 });

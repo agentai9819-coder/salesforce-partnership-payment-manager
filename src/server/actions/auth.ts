@@ -18,18 +18,6 @@ export async function loginAction(
   password?: string
 ): Promise<ActionResult> {
   try {
-    // Defense-in-depth: Ensure the Front Door Security Gateway has been unlocked
-    const gatewayCookie = cookies().get(GATEWAY_COOKIE_NAME);
-    if (process.env.NODE_ENV !== 'test' && gatewayCookie?.value !== 'unlocked') {
-      return {
-        success: false,
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Security Gateway is locked. Please enter the master passcode at the front door.',
-        },
-      };
-    }
-
     // Dynamic lookup: organization is determined from the verified partner record
     const partner = db.getPartnerByCode(partnerCode);
     if (!partner || !partner.isActive) {
@@ -39,7 +27,7 @@ export async function loginAction(
       };
     }
 
-    // Individual Partner Password Verification
+    // Individual Partner Password Verification (Single User-Based Passcode)
     const expectedPassword =
       partnerCode === 'ANURAG'
         ? process.env.ANURAG_PASSWORD || DEFAULT_ANURAG_PASSWORD
@@ -59,6 +47,15 @@ export async function loginAction(
     const expires = new Date(Date.now() + maxAge * 1000);
 
     cookies().set(SESSION_COOKIE_NAME, partner.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge,
+      expires,
+    });
+
+    cookies().set(GATEWAY_COOKIE_NAME, 'unlocked', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
