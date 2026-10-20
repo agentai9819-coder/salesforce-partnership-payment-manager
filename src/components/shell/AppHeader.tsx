@@ -2,8 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentPartner } from '@/server/auth';
-import { logoutAction, switchPartnerAction } from '@/server/actions/auth';
-import { LogOut } from 'lucide-react';
+import { LogoutButton } from './LogoutButton';
 
 export async function AppHeader() {
   const currentPartner = await getCurrentPartner();
@@ -48,22 +47,7 @@ export async function AppHeader() {
                 Settings
               </Link>
 
-              <form
-                action={async () => {
-                  'use server';
-                  await logoutAction();
-                  redirect('/login');
-                }}
-                className="inline"
-              >
-                <button
-                  type="submit"
-                  title="Logout"
-                  className="rounded-lg border border-border p-1.5 text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </form>
+              <LogoutButton />
             </>
           ) : (
             <Link
