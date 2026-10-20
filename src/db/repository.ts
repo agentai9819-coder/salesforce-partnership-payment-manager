@@ -88,7 +88,13 @@ export class DatabaseRepository {
       if (fs.existsSync(DB_FILE)) {
         try {
           const raw = fs.readFileSync(DB_FILE, 'utf-8');
-          return JSON.parse(raw) as DatabaseSchema;
+          const data = JSON.parse(raw) as DatabaseSchema;
+          const initialSeed = this.createInitialSeed();
+          if (data.clientPayments && data.clientPayments.length < initialSeed.clientPayments.length) {
+            this.saveToDisk(initialSeed);
+            return initialSeed;
+          }
+          return data;
         } catch (err) {
           console.error('Failed to parse database.json, initializing fresh seed.', err);
         }

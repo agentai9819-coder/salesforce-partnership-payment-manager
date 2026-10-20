@@ -39,16 +39,16 @@ export function WhatsAppPartnerCard({
   totalAnuragHoldsForVivek,
   recentPayments = [],
 }: WhatsAppPartnerCardProps) {
-  // Check feature flag & partner role: Off by default per user instruction
-  if (!ENABLE_WHATSAPP_DISPATCH || !isAnurag) {
-    return null;
-  }
-
   const [selectedTemplate, setSelectedTemplate] = useState<'balance' | 'latest' | 'custom'>('balance');
   const [copied, setCopied] = useState(false);
   const [customClient, setCustomClient] = useState('Sai - September 16-30 (Cycle 2)');
   const [customAmount, setCustomAmount] = useState('25000');
   const [customCollector, setCustomCollector] = useState<'ANURAG' | 'VIVEK'>('ANURAG');
+
+  // Check feature flag & partner role: Off by default per user instruction
+  if (!ENABLE_WHATSAPP_DISPATCH || !isAnurag) {
+    return null;
+  }
 
   const latestPayment = recentPayments[0] || {
     clientName: 'Sai - Sep 16-30',

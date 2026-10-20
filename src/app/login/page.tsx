@@ -7,11 +7,9 @@ import { GATEWAY_COOKIE_NAME } from '@/server/constants';
 import { Partner } from '@/domain/types/entities';
 import { DoorGateway } from '@/components/auth/DoorGateway';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LoginPage() {
-  const currentPartner = await getCurrentPartner();
-  if (currentPartner) {
-    redirect('/dashboard');
-  }
 
   const gatewayCookie = cookies().get(GATEWAY_COOKIE_NAME);
   const isInitiallyUnlocked = gatewayCookie?.value === 'unlocked';

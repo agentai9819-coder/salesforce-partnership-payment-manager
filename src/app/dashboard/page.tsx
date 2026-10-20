@@ -25,6 +25,8 @@ interface DashboardPageProps {
   };
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const { partner: currentPartner, organizationId } = await requireAuthenticatedPartner();
   const isAnurag = currentPartner?.partnerCode === 'ANURAG';
