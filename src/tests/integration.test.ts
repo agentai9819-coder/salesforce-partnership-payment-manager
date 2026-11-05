@@ -209,7 +209,7 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
 
   // M. Expected payment does not increase cash.
   it('M. Expected payment does not increase cash', () => {
-    const testPeriod = db.ensureBillingPeriod(orgId, '2026-10-C2');
+    const testPeriod = db.ensureBillingPeriod(orgId, '2026-11-C2');
     const plan = db.setBillingPlan('client-eshwar', testPeriod.id, '25000.00', anuragId);
 
     const payments = db.getPaymentsForPeriod(testPeriod.id);
@@ -649,11 +649,11 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
       }
     });
 
-    expect(vivekHoldsForAnurag).toBe(53000); // Rohit C1 ₹10,000 + Sai Aug ₹10,000 + Rohit C2 ₹10,000 + Satish Oct C1 ₹3,000 + Rohit Oct C1 ₹20,000
+    expect(vivekHoldsForAnurag).toBe(73000); // Rohit C1 ₹10,000 + Sai Aug ₹10,000 + Rohit C2 ₹10,000 + Satish Oct C1 ₹3,000 + Rohit Oct C1 ₹20,000 + Rohit Oct C2 ₹20,000
     expect(anuragHoldsForVivek).toBe(67500); // Eshwar Aug ₹7.5k + Sai Sep C1 ₹12.5k + Eshwar Sep ₹7.5k + Ganesh Sep ₹10k + Sai Sep C2 ₹12.5k + Sai Oct C1 ₹12.5k + Ganesh Oct C1 ₹5k
 
-    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // -14500 (Anurag owes Vivek ₹14,500 operational)
-    expect(operationalDiff).toBe(-14500);
+    const operationalDiff = vivekHoldsForAnurag - anuragHoldsForVivek; // +5500 (Vivek owes Anurag ₹5,500 operational)
+    expect(operationalDiff).toBe(5500);
 
     const allAdjustments = db.getBusinessAdjustments('OVERALL').filter((a) => a.status === 'APPLIED');
     let netAdjustmentToVivek = 0;
@@ -667,7 +667,7 @@ describe('Salesforce Partnership Payment Manager — Final Business Verification
     });
     expect(netAdjustmentToVivek).toBe(5500); // Old debt ₹500 + Vivek cash transfer ₹5,000
 
-    const finalTransfer = operationalDiff - netAdjustmentToVivek; // -14500 - 5500 = -20000 (Anurag pays Vivek ₹20,000)
-    expect(finalTransfer).toBe(-20000);
+    const finalTransfer = operationalDiff - netAdjustmentToVivek; // +5500 - 5500 = 0 (Hisaab Bilkul Barabar / Balanced)
+    expect(finalTransfer).toBe(0);
   });
 });

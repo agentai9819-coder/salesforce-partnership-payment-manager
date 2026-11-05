@@ -873,6 +873,7 @@ export class DatabaseRepository {
     const periodSepId = 'bp-2026-09';
 
     const periodOctC1Id = 'bp-2026-10-C1';
+    const periodOctC2Id = 'bp-2026-10-C2';
     const periodOctId = 'bp-2026-10';
 
     return {
@@ -1022,6 +1023,15 @@ export class DatabaseRepository {
           endDate: '2026-10-15',
           status: 'OPEN',
           createdAt: '2026-10-01T00:00:00Z',
+        },
+        {
+          id: periodOctC2Id,
+          organizationId: orgId,
+          periodKey: '2026-10-C2',
+          startDate: '2026-10-16',
+          endDate: '2026-10-31',
+          status: 'OPEN',
+          createdAt: '2026-10-16T00:00:00Z',
         },
         {
           id: periodOctId,
@@ -1273,15 +1283,26 @@ export class DatabaseRepository {
           updatedAt: '2026-10-15T00:00:00Z',
         },
         {
+          id: 'cbp-rohit-oct-c2',
+          clientId: 'client-rohit',
+          billingPeriodId: periodOctC2Id,
+          grossBillingAmount: '55000.00',
+          notes: 'Rohit Cycle 2 (Oct 16-31) billing - ₹55,000 received by Vivek, ₹15,000 broker expense',
+          createdByPartnerId: vivekId,
+          updatedByPartnerId: vivekId,
+          createdAt: '2026-10-16T00:00:00Z',
+          updatedAt: '2026-10-31T00:00:00Z',
+        },
+        {
           id: 'cbp-rohit-oct',
           clientId: 'client-rohit',
           billingPeriodId: periodOctId,
-          grossBillingAmount: '55000.00',
-          notes: 'Rohit October Full Month billing - ₹55,000 received by Vivek, ₹15,000 resource expense',
+          grossBillingAmount: '110000.00',
+          notes: 'Rohit October Full Month billing - ₹110,000 received by Vivek (₹55k C1 + ₹55k C2), ₹30,000 broker expense',
           createdByPartnerId: vivekId,
           updatedByPartnerId: vivekId,
           createdAt: '2026-10-01T00:00:00Z',
-          updatedAt: '2026-10-15T00:00:00Z',
+          updatedAt: '2026-10-31T00:00:00Z',
         },
         {
           id: 'cbp-sai-oct-c1',
@@ -1679,6 +1700,35 @@ export class DatabaseRepository {
           createdAt: '2026-10-15T12:00:00Z',
           updatedAt: '2026-10-15T12:00:00Z',
         },
+        // Rohit October 16-31 (Received by Vivek)
+        {
+          id: 'pay-oct-rohit-c2',
+          billingPlanId: 'cbp-rohit-oct-c2',
+          collectedByPartnerId: vivekId,
+          paymentDate: '2026-10-31',
+          amountReceived: '55000.00',
+          paymentReference: 'ROHIT-OCT-C2',
+          status: 'CONFIRMED',
+          notes: 'Oct 16-31 payment ₹55,000 received in Vivek account (₹15,000 broker paid by Vivek, ₹40,000 net in Vivek account; 50/50 split: Anurag ₹20,000, Vivek ₹20,000)',
+          idempotencyKey: 'idem-rohit-oct-c2',
+          createdByPartnerId: vivekId,
+          createdAt: '2026-10-31T12:00:00Z',
+          updatedAt: '2026-10-31T12:00:00Z',
+        },
+        {
+          id: 'pay-oct-rohit-full2',
+          billingPlanId: 'cbp-rohit-oct',
+          collectedByPartnerId: vivekId,
+          paymentDate: '2026-10-31',
+          amountReceived: '55000.00',
+          paymentReference: 'ROHIT-OCT-FULL2',
+          status: 'CONFIRMED',
+          notes: 'Oct 16-31 payment ₹55,000 received in Vivek account (₹15,000 broker paid by Vivek, ₹40,000 net in Vivek account; 50/50 split: Anurag ₹20,000, Vivek ₹20,000)',
+          idempotencyKey: 'idem-rohit-oct-full2',
+          createdByPartnerId: vivekId,
+          createdAt: '2026-10-31T12:00:00Z',
+          updatedAt: '2026-10-31T12:00:00Z',
+        },
         // Sai October 1-15 (Received by Anurag)
         {
           id: 'pay-oct-sai-c1',
@@ -1843,6 +1893,14 @@ export class DatabaseRepository {
           expectedAmount: '15000.00',
           notes: 'Resource expense for Rohit (Oct Cycle 1) - ₹15,000 paid by Vivek',
           createdAt: '2026-10-01T00:00:00Z',
+        },
+        {
+          id: 'eo-rohit-oct-c2',
+          billingPlanId: 'cbp-rohit-oct-c2',
+          externalPartyId: 'ep-broker-rohit',
+          expectedAmount: '15000.00',
+          notes: 'Broker expense for Rohit (Oct Cycle 2) - ₹15,000 paid by Vivek',
+          createdAt: '2026-10-16T00:00:00Z',
         },
         {
           id: 'eo-rohit-oct',
@@ -2018,6 +2076,35 @@ export class DatabaseRepository {
           createdByPartnerId: vivekId,
           createdAt: '2026-10-15T12:30:00Z',
           updatedAt: '2026-10-15T12:30:00Z',
+        },
+        // Rohit October Cycle 2 Broker Disbursement (Paid by Vivek)
+        {
+          id: 'ed-oct-rohit-c2',
+          obligationId: 'eo-rohit-oct-c2',
+          billingPeriodId: periodOctC2Id,
+          externalPartyId: 'ep-broker-rohit',
+          disbursedByPartnerId: vivekId,
+          amountPaid: '15000.00',
+          disbursementDate: '2026-10-31',
+          status: 'CONFIRMED',
+          notes: '₹15,000 disbursed to broker by Vivek for Rohit account (Oct Cycle 2)',
+          createdByPartnerId: vivekId,
+          createdAt: '2026-10-31T12:30:00Z',
+          updatedAt: '2026-10-31T12:30:00Z',
+        },
+        {
+          id: 'ed-oct-rohit-full2',
+          obligationId: 'eo-rohit-oct',
+          billingPeriodId: periodOctId,
+          externalPartyId: 'ep-broker-rohit',
+          disbursedByPartnerId: vivekId,
+          amountPaid: '15000.00',
+          disbursementDate: '2026-10-31',
+          status: 'CONFIRMED',
+          notes: '₹15,000 disbursed to broker by Vivek for Rohit account (October Part 2)',
+          createdByPartnerId: vivekId,
+          createdAt: '2026-10-31T12:30:00Z',
+          updatedAt: '2026-10-31T12:30:00Z',
         },
         // Ganesh October Cycle 1 Resource Disbursement (Paid by Anurag)
         {

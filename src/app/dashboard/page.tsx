@@ -31,8 +31,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const { partner: currentPartner, organizationId } = await requireAuthenticatedPartner();
   const isAnurag = currentPartner?.partnerCode === 'ANURAG';
 
-  // Default to Cycle 1 of October 2026 (Current active cycle)
-  const currentPeriodKey = searchParams?.period || '2026-10-C1';
+  // Default to Cycle 2 of October 2026 (Current active cycle)
+  const currentPeriodKey = searchParams?.period || '2026-10-C2';
   const activePeriod = db.ensureBillingPeriod(organizationId, currentPeriodKey);
 
   const partners = db.getPartners(organizationId);
@@ -50,7 +50,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   // Period Tabs
   const periodTabs = [
-    { key: '2026-10-C1', label: 'Oct 1 – 15 (Current)' },
+    { key: '2026-10-C2', label: 'Oct 16 – 31 (Current)' },
+    { key: '2026-10-C1', label: 'Oct 1 – 15' },
+    { key: '2026-10', label: 'October Full Month' },
     { key: '2026-09-C2', label: 'Sep 16 – 30' },
     { key: '2026-09-C1', label: 'Sep 1 – 15' },
     { key: '2026-09', label: 'September Full Month' },
@@ -193,7 +195,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const isMasterAnuragPays = masterFinalNetToAnurag < 0;
   const absFinalNet = Math.abs(masterFinalNetToAnurag);
 
-  let masterSentence = 'Hisaab Bilkul Barabar (Balanced)';
+  let masterSentence = 'Hisaab Bilkul Barabar (Balanced) \u2705';
   if (isMasterVivekPays) {
     masterSentence = `Vivek ko Anurag ko ₹${absFinalNet.toLocaleString('en-IN')} dene hain \u2705`;
   } else if (isMasterAnuragPays) {
@@ -250,20 +252,22 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           ? 'border-emerald-500/40 bg-gradient-to-br from-emerald-950/40 via-card to-background'
           : isMasterAnuragPays
           ? 'border-amber-500/40 bg-gradient-to-br from-amber-950/40 via-card to-background'
-          : 'border-border bg-card'
+          : 'border-emerald-500/40 bg-gradient-to-br from-emerald-950/30 via-card to-background'
       }`}>
         <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-border/60">
           <div className="flex items-center gap-2.5">
             <div className={`flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-md ${
               isMasterVivekPays
                 ? 'bg-emerald-500 shadow-emerald-500/20'
-                : 'bg-amber-500 shadow-amber-500/20'
+                : isMasterAnuragPays
+                ? 'bg-amber-500 shadow-amber-500/20'
+                : 'bg-emerald-500 shadow-emerald-500/20'
             }`}>
               <Scale className="h-5 w-5" />
             </div>
             <div>
               <span className={`text-[11px] font-black uppercase tracking-wider ${
-                isMasterVivekPays ? 'text-emerald-400' : 'text-amber-400'
+                isMasterVivekPays ? 'text-emerald-400' : isMasterAnuragPays ? 'text-amber-400' : 'text-emerald-400'
               }`}>
                 KUL HISAAB &bull; DYNAMIC 50/50 SETTLEMENT
               </span>
@@ -275,7 +279,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <span className={`text-xs font-black px-3 py-1 rounded-full border ${
             isMasterVivekPays
               ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-              : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+              : isMasterAnuragPays
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
           }`}>
             Final Net: ₹{absFinalNet.toLocaleString('en-IN')}
           </span>
