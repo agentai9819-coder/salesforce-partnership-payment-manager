@@ -23,6 +23,8 @@ Client Payment,2026-10-15,Rohit,2026-10-C1 (Oct 1-15),ROHIT-OCT-C1,Vivek,55000.0
 Client Payment,2026-10-15,Sai,2026-10-C1 (Oct 1-15),SAI-OCT-C1,Anurag,25000.00,0.00,-,25000.00,12500.00,12500.00,Anurag holds Vivek share,UNSETTLED,"Oct Cycle 1 payment 25k received by Anurag, Anurag holds Vivek 12,500"
 Client Payment,2026-10-15,Ganesh,2026-10-C1 (Oct 1-15),GANESH-OCT-C1,Anurag,30000.00,20000.00,Monika,10000.00,5000.00,5000.00,Anurag holds Vivek share,UNSETTLED,"Oct Cycle 1 payment 30k received by Anurag, 20k Monika paid by Anurag, 10k net, Anurag holds Vivek 5,000"
 Client Payment,2026-10-31,Rohit,2026-10-C2 (Oct 16-31),ROHIT-OCT-C2,Vivek,55000.00,15000.00,Broker/Resource,40000.00,20000.00,20000.00,Vivek holds Anurag share,UNSETTLED,"Oct Cycle 2 payment 55k received by Vivek, 15k broker paid by Vivek, 40k net in Vivek account, Vivek holds Anurag 20,000"
+Client Payment,2026-10-31,Sai,2026-10-C2 (Oct 16-31),SAI-OCT-C2,Anurag,25000.00,0.00,-,25000.00,12500.00,12500.00,Anurag holds Vivek share,UNSETTLED,"Oct Cycle 2 payment 25k received by Anurag, Anurag holds Vivek 12,500"
+Client Payment,2026-10-31,Ganesh,2026-10-C2 (Oct 16-31),GANESH-OCT-C2,Anurag,30000.00,20000.00,Monika,10000.00,5000.00,5000.00,Anurag holds Vivek share,UNSETTLED,"Oct Cycle 2 payment 30k received by Anurag, 20k Monika paid by Anurag, 10k net, Anurag holds Vivek 5,000"
 
 # ----------------------------------------------------------------------------------------------------
 # SECTION 2: ALL EXTERNAL RESOURCE DISBURSEMENTS (RESOURCE KHARCHA JO DIYA GAYA)
@@ -35,6 +37,7 @@ Resource Expense,2026-09-30,Ganesh,Monika,Anurag,40000.00,2026-09-C2,"Monika res
 Resource Expense,2026-10-15,Rohit,Resource/Dev,Vivek,15000.00,2026-10-C1,"October Cycle 1 resource cost paid by Vivek for Rohit project"
 Resource Expense,2026-10-15,Ganesh,Monika,Anurag,20000.00,2026-10-C1,"Monika resource cost for Ganesh project (Oct Cycle 1) paid by Anurag"
 Resource Expense,2026-10-31,Rohit,Broker/Resource,Vivek,15000.00,2026-10-C2,"October Cycle 2 broker fee paid by Vivek for Rohit project"
+Resource Expense,2026-10-31,Ganesh,Monika,Anurag,20000.00,2026-10-C2,"Monika resource cost for Ganesh project (Oct Cycle 2) paid by Anurag"
 
 # ----------------------------------------------------------------------------------------------------
 # SECTION 3: DIRECT PARTNER-TO-PARTNER TRANSFERS & BUSINESS ADJUSTMENTS
@@ -48,13 +51,13 @@ Direct Partner Transfer,2026-10-06,Vivek,Anurag,5000.00,"Direct cash transfer: V
 # ----------------------------------------------------------------------------------------------------
 Partner,Item,Breakdown / Calculation,Amount Held for Partner (INR)
 Vivek,Cash Held for Anurag,"Sai Aug (10,000) + Rohit Sep C1 (10,000) + Rohit Sep C2 (10,000) + Satish Oct (3,000) + Rohit Oct C1 (20,000) + Rohit Oct C2 (20,000)",73000.00
-Anurag,Cash Held for Vivek,"Eshwar Aug (7,500) + Sai Sep C1 (12,500) + Eshwar Sep C1 (7,500) + Ganesh Sep C2 (10,000) + Sai Sep C2 (12,500) + Sai Oct C1 (12,500) + Ganesh Oct C1 (5,000)",67500.00
+Anurag,Cash Held for Vivek,"Eshwar Aug (7,500) + Sai Sep C1 (12,500) + Eshwar Sep C1 (7,500) + Ganesh Sep C2 (10,000) + Sai Sep C2 (12,500) + Sai Oct C1 (12,500) + Ganesh Oct C1 (5,000) + Sai Oct C2 (12,500) + Ganesh Oct C2 (5,000)",85000.00
 
 # ----------------------------------------------------------------------------------------------------
 # SECTION 5: FINAL RECONCILIATION & TALLY CALCULATION
 # ----------------------------------------------------------------------------------------------------
 Component,Calculation Formula,Result (INR),Direction
-1. Kaam ka Antar (Operations Net),Vivek holds (73,000) - Anurag holds (67,500),+5500.00,Vivek owes Anurag 5500.00
+1. Kaam ka Antar (Operations Net),Vivek holds (73,000) - Anurag holds (85,000),-12000.00,Anurag owes Vivek 12000.00
 2. Purana Udhaar (Carry Forward),Old balance carry forward,-500.00,Anurag owes Vivek 500.00
 3. Vivek Direct Transfer,Vivek transferred cash to Anurag account,-5000.00,Anurag owes Vivek 5000.00
-FINAL NET SETTLEMENT,Operations (+5500) - Adjustments (500 + 5000),0.00,HISAAB BILKUL BARABAR (0.00 NET)
+FINAL NET SETTLEMENT,Operations (-12000) - Adjustments (500 + 5000),-17500.00,ANURAG PAYS VIVEK 17500.00
